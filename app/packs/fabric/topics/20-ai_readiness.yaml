@@ -1,0 +1,85 @@
+id: ai_readiness
+title: AI readiness
+situation: >-
+  AI features read your data through its metadata. Descriptions, endorsements, a clean semantic
+  model and a capacity that allows AI features decide how good the answers are. Some features are
+  in preview, and processing can cross a geographic or compliance boundary unless a tenant setting
+  allows it.
+intake:
+  - Which questions would users ask a data agent, and over which tables or models?
+  - Is your capacity in a region where Copilot processing is allowed, or does a cross-geo setting need approval?
+  - Who would own agent descriptions and instructions after a pilot?
+recommendation_note: Prepare the foundations now. Start an agent pilot only when a use case and an owner are named.
+adr_context: >-
+  AI-ready foundations were chosen. Tables and models are described and endorsed, tenant settings
+  are scoped to named groups, and no agent is published yet. This prepares the platform for a pilot
+  without moving data outside its geography before a use case exists.
+options:
+  - value: not_now
+    label: Not now
+    description: No AI features are switched on. Revisit when a use case and an owner exist.
+    tradeoff: No AI processing and no cost, but metadata work starts from zero when AI is wanted.
+    pros:
+      - No data is processed by Azure OpenAI outside your region
+      - No capacity use or licence cost for AI features
+      - Effort stays on core platform decisions
+    cons:
+      - Users may turn to ungoverned AI tools instead
+      - Descriptions and endorsement are not prepared, so a later pilot starts from nothing
+    adr_context: >-
+      AI features were deferred. No Copilot or data agent settings are enabled, and the decision is
+      revisited when a use case and an owner are named. Metadata work is postponed with it.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/copilot-enable-fabric
+        title: Enable and configure Copilot in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/data-science/data-agent-tenant-settings
+        title: Configure Fabric data agent tenant settings
+  - value: ai_ready_foundations
+    label: AI-ready foundations
+    description: Describe tables, endorse models and set tenant settings for named groups, without launching an agent.
+    tradeoff: Prepares for a pilot at low cost, but shows no visible AI product yet.
+    pros:
+      - Copilot tenant settings can be scoped to security groups for a staged rollout
+      - Descriptions and endorsement are the inputs a published agent needs
+      - No agent is exposed until an owner is named
+    cons:
+      - Effort goes into metadata before anyone sees an AI result
+      - Copilot features need a paid F2 or P1 capacity or higher, not a trial
+    adr_context: >-
+      The team prepared AI foundations. Key tables and semantic models receive descriptions and
+      endorsement, Copilot tenant settings are scoped to named security groups, and a paid capacity
+      is identified for later use. No agent is published at this stage.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/copilot-enable-fabric
+        title: Enable and configure Copilot in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/data-science/data-agent-microsoft-copilot-studio-tool
+        title: Add a Fabric data agent as a tool in Microsoft Copilot Studio
+  - value: agent_pilot
+    label: Data agent pilot
+    description: Build one Fabric data agent over a warehouse, lakehouse or semantic model and test it with a small group.
+    tradeoff: Tests real questions on real data, but it is a preview feature and needs paid capacity.
+    pros:
+      - Tests the agent with real questions before wider rollout
+      - Works over a warehouse, lakehouse, semantic model, KQL database or mirrored database
+      - A published agent can be added as a tool in Microsoft Copilot Studio
+    cons:
+      - The data agent is in preview
+      - Needs a paid F2 or higher capacity and a cross-geo setting outside the US and EU
+      - Responses used in Microsoft Copilot may leave Fabric's compliance boundary or region
+    adr_context: >-
+      A data agent pilot was started over one curated source with a named owner and a small user
+      group. It runs on a paid capacity, and the cross-geo AI settings were reviewed because
+      responses consumed in Microsoft Copilot can leave Fabric's compliance boundary.
+    maturity: preview
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-science/data-agent-end-to-end-tutorial
+        title: Fabric data agent example with the AdventureWorks dataset (preview)
+      - url: https://learn.microsoft.com/fabric/data-science/data-agent-microsoft-365-copilot
+        title: Consume Fabric data agent in Microsoft Copilot
+      - url: https://learn.microsoft.com/fabric/enterprise/fabric-copilot-capacity
+        title: Fabric Copilot capacity

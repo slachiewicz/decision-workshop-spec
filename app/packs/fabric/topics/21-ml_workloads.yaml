@@ -1,0 +1,82 @@
+id: ml_workloads
+title: Data science and ML workloads
+situation: >-
+  Machine learning can run inside Fabric on the same OneLake data, or in a separate platform that
+  reads and writes OneLake. The choice decides where experiments and models are tracked, which
+  capacity pays for training, and how predictions reach reports.
+intake:
+  - Does any team train models today, and with which tools?
+  - Where must training data and model artefacts stay for compliance reasons?
+  - Do predictions need to land back in OneLake so reports can read them?
+recommendation_note: ''
+adr_context: >-
+  A position on machine learning workloads was recorded so that teams know where models are
+  trained, tracked and scored. The position also fixes how predictions return to OneLake for
+  reporting.
+options:
+  - value: none_yet
+    label: None yet
+    description: No ML workloads are planned. The option stays open and nothing is built.
+    tradeoff: No spend or setup, but teams may start in personal tools with no agreed home for models.
+    pros:
+      - No capacity or tooling spend
+      - Effort stays on core platform decisions
+    cons:
+      - Teams may start in personal tools with no agreed place for models
+      - A later start needs the decision again, with the data already in use
+    adr_context: >-
+      No machine learning workloads were planned at this stage. The question is revisited when a
+      team brings a concrete use case, and no ML tooling is provisioned in the meantime.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/analyze-train-data
+        title: Analyze and train data in Microsoft Fabric
+  - value: in_platform
+    label: In Fabric
+    description: Train and track models with Fabric notebooks, Spark and MLflow, and write predictions to OneLake.
+    tradeoff: Experiments, models and data share one platform, but training draws on shared capacity.
+    pros:
+      - MLflow experiments and a model registry are built into notebooks and Spark jobs
+      - Batch scoring writes predictions to OneLake, where Direct Lake reports read them without a refresh
+      - Models can be deployed to real-time endpoints
+    cons:
+      - Training runs consume capacity units shared with other Fabric workloads
+      - Spark cluster data, including temp disks, is not covered by workspace customer-managed keys
+      - Teams must adopt Fabric notebooks and MLflow conventions
+    adr_context: >-
+      Machine learning workloads run in Fabric. Models are trained in notebooks, tracked with MLflow
+      and registered in the workspace, and batch predictions are written to OneLake for reports to
+      read. Training capacity is planned together with other workloads.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/analyze-train-data
+        title: Analyze and train data in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/data-science/data-science-overview
+        title: What is Data Science in Microsoft Fabric?
+      - url: https://learn.microsoft.com/fabric/security/workspace-customer-managed-keys
+        title: Customer-managed keys for Fabric workspaces
+  - value: external_platform
+    label: External platform
+    description: Train in Azure Machine Learning or Azure Databricks and read or write OneLake through its APIs.
+    tradeoff: Keeps existing ML tooling and one copy of data, but adds a second platform to run and secure.
+    pros:
+      - Existing ML teams and tooling stay in use
+      - OneLake datastores and abfss paths keep a single copy of the data
+      - Access is governed by Fabric workspace roles
+    cons:
+      - Reading OneLake through mltable currently fails; use uri_file or uri_folder instead
+      - AutoML needs data staged on ADLS Gen2
+      - Cross-region compute adds egress, so regions must match
+    adr_context: >-
+      Machine learning is run on an external platform that reads and writes OneLake through its
+      APIs. Fabric workspace roles govern access, compute is kept in the same region as the
+      capacity, and predictions are written back to OneLake for reporting.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-azure-machine-learning
+        title: Integrate OneLake with Azure Machine Learning
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-overview
+        title: What is OneLake?

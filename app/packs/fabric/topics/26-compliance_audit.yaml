@@ -1,0 +1,92 @@
+id: compliance_audit
+title: Compliance and audit
+situation: >-
+  Compliance posture sets how much evidence you keep and how much control you take over keys,
+  region and sharing. Fabric holds ISO 27001, 27017, 27018 and 27701 certifications and a HIPAA
+  BAA, yet compliance is a shared responsibility. User activity goes to the Microsoft Purview audit
+  log, which keeps 180 days in Audit (Standard).
+intake:
+  - Which regulations or customer contracts apply, and must data stay in a given region?
+  - Who reviews audit logs, and how far back do investigations go?
+  - Is customer-managed key encryption a requirement or a preference?
+recommendation_note: Audit-ready fits most estates. Choose regulated only when a rule requires key or region control.
+adr_context: >-
+  An audit-ready posture was chosen. Fabric activity is retained beyond the default window, audit
+  events are reviewed on a schedule, and OneLake data access is logged. Key and region controls
+  stay at platform defaults until a regulation requires more.
+options:
+  - value: minimal
+    label: Minimal
+    description: Rely on platform defaults and the 180-day audit log, with no extra review or export.
+    tradeoff: No setup, but no evidence beyond 180 days and no scheduled review.
+    pros:
+      - No extra setup or cost
+      - Data is still encrypted at rest with Microsoft-managed keys
+      - Standard audit search covers user and admin activity for 180 days
+    cons:
+      - Audit records older than 180 days cannot be searched
+      - Nobody reviews the log unless an incident prompts it
+      - Does not show who read data through OneLake APIs
+    adr_context: >-
+      A minimal compliance posture was chosen. The platform relies on default encryption and the
+      180-day Purview audit log, with no scheduled review. The team accepted that older activity
+      cannot be searched and that no regulation applies to this data.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/purview/audit-solutions-overview
+        title: Learn about auditing solutions in Microsoft Purview
+      - url: https://learn.microsoft.com/azure/well-architected/microsoft-fabric/security
+        title: Security considerations for Microsoft Fabric workloads
+  - value: audit_ready
+    label: Audit-ready
+    description: Export audit events past 180 days, review them on a schedule and log OneLake data access.
+    tradeoff: Evidence for investigations and audits, at the cost of storage and reviewer time.
+    pros:
+      - Audit events can be exported through the Office 365 Management Activity API for longer retention
+      - OneLake diagnostics records data access through OneLake APIs
+      - Audit search filters by user, activity and date range
+    cons:
+      - Reviewers need the Audit Logs role in Exchange Online
+      - Power BI audit events can lag by up to 60 minutes
+      - Exported logs and diagnostics need storage and a reviewer
+    adr_context: >-
+      The platform is audit-ready. Fabric audit events are exported for retention beyond 180 days,
+      OneLake diagnostics logs data access into a lakehouse, and a named reviewer checks both on a
+      schedule. Encryption and region stay at platform defaults.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/purview/audit-solutions-overview
+        title: Learn about auditing solutions in Microsoft Purview
+      - url: https://learn.microsoft.com/fabric/admin/track-user-activities
+        title: Track user activities in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/enterprise/powerbi/service-admin-auditing
+        title: Track user activities in Power BI
+      - url: https://learn.microsoft.com/fabric/onelake/security/get-started-security
+        title: Data security in OneLake
+  - value: regulated
+    label: Regulated
+    description: Customer-managed keys, region control, longer audit retention and documented evidence for a named regulation.
+    tradeoff: Meets strict rules on keys and residency, but adds operational dependencies and coverage gaps.
+    pros:
+      - Workspace customer-managed keys add a layer of encryption you control and can revoke
+      - Multi-Geo capacities keep a workspace's compute and storage in the chosen region
+      - Purview Audit (Premium) keeps audit records for up to one year
+    cons:
+      - If the key vault key is disabled or deleted, workspace data becomes unreachable
+      - Spark cluster data and some metadata are not covered by customer-managed keys
+      - Customer-managed keys are not available on trial capacities
+    adr_context: >-
+      A regulated posture was chosen. Workspaces that hold regulated data use customer-managed keys
+      held in Azure Key Vault, capacities sit in the required region, and audit records are retained
+      for the period the regulation sets. Coverage gaps in key encryption were listed and accepted.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/security/workspace-customer-managed-keys
+        title: Customer-managed keys for Fabric workspaces
+      - url: https://learn.microsoft.com/fabric/security/security-scenario
+        title: Microsoft Fabric end-to-end security scenario
+      - url: https://learn.microsoft.com/fabric/governance/governance-compliance-overview
+        title: Governance overview and guidance

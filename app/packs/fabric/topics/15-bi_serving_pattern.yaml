@@ -1,0 +1,111 @@
+id: bi_serving_pattern
+title: BI workspace and serving pattern
+situation: >-
+  Where semantic models and reports live decides who can change a number, who sees which data,
+  and how many workspaces you run. Microsoft's guidance separates data workspaces from reporting
+  workspaces so model owners and report authors hold different roles. Keeping everything together
+  is simpler, but it widens edit rights.
+intake:
+  - Who builds and maintains the semantic models, and who builds the reports on top of them?
+  - Do report authors in business units need to extend a shared model with their own data?
+  - How many workspaces can your team govern and audit in each environment?
+recommendation_note: ''
+adr_context: >-
+  A BI serving pattern was chosen to settle where semantic models and reports are stored and who
+  may edit each. The pattern sets workspace roles for model owners and report authors, and it
+  decides whether row-level rules stay enforced for people who build reports.
+options:
+  - value: model_report_split
+    label: Model and report split
+    description: Semantic models live in one workspace and reports in others, linked by a live connection.
+    tradeoff: Ownership stays clear and row-level rules apply to authors, but you run more workspaces.
+    pros:
+      - Model owners control change, so a certified model is not edited by accident
+      - Report authors publish with Read and Build only, so row-level security still applies
+      - One shared model can feed many reports and keep numbers consistent
+    cons:
+      - More workspaces to manage and audit
+      - A naming rule is needed to tell data workspaces from reporting workspaces
+      - Changes to the model need a request process between teams
+    adr_context: >-
+      Semantic models and reports were placed in separate workspaces. Model owners hold edit rights
+      in the model workspace, and report authors publish to their own workspaces with Read and Build
+      permission on the shared model. Row-level security therefore stays in force for authors, and
+      ownership of each item is clear.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-workspaces-workspace-level-planning
+        title: "Power BI implementation planning: Workspaces at the workspace level"
+      - url: https://learn.microsoft.com/power-bi/guidance/report-separate-from-model
+        title: Separate reports from models in Power BI Desktop
+      - url: https://learn.microsoft.com/power-bi/connect-data/service-datasets-across-workspaces
+        title: Introduction to semantic models across workspaces
+  - value: single_workspace
+    label: Single workspace
+    description: The semantic model and its reports share one workspace, usually one per domain or project.
+    tradeoff: Fewest workspaces and roles, but anyone who can edit a report can also edit the model.
+    pros:
+      - Fewest workspaces to create, secure and promote
+      - One set of roles and one group per role to maintain
+      - Simple for a small team that owns both model and reports
+    cons:
+      - Contributor and higher roles can edit the model, and model row-level rules do not apply to them
+      - Ownership is ambiguous when a central team and business units both publish
+      - The workspace can drift into holding more content types than intended
+    adr_context: >-
+      One workspace per domain was chosen to hold both the semantic model and its reports. The team
+      that owns the model also owns the reports, so a single set of roles was judged enough. Row-level
+      rules in the model do not apply to people with edit roles, and that limit was accepted.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-workspaces-workspace-level-planning
+        title: "Power BI implementation planning: Workspaces at the workspace level"
+      - url: https://learn.microsoft.com/fabric/fundamentals/direct-lake-security-integration
+        title: Integrate Direct Lake security
+  - value: tiered_split
+    label: Tiered split
+    description: A central workspace holds certified models, domain workspaces extend them, and report workspaces sit on top.
+    tradeoff: Domains add their own data without copying the core model, at the cost of one more tier to govern.
+    pros:
+      - Composite models let a domain add tables to a shared model without copying it
+      - The certified core model stays unchanged and keeps one definition of each measure
+      - Central team and domains each own a distinct workspace
+    cons:
+      - Three kinds of workspace to name, secure and promote
+      - Extended models multiply unless you limit who may create them
+      - Lineage and impact analysis are needed to see what depends on the core model
+    adr_context: >-
+      A tiered pattern was chosen. A central workspace owns the certified semantic models, domain
+      workspaces extend them with local data through composite models, and reports are published to
+      separate reporting workspaces. This keeps one definition of core measures while letting domains
+      move at their own pace.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-usage-scenario-customizable-managed-self-service-bi
+        title: "Power BI usage scenarios: Customizable managed self-service BI"
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-workspaces-workspace-level-planning
+        title: "Power BI implementation planning: Workspaces at the workspace level"
+  - value: reports_in_gold
+    label: Reports in the Gold workspace
+    description: Reports and the semantic model sit in the same workspace as the Gold lakehouse or warehouse.
+    tradeoff: Fewest moving parts and one lineage view, but report authors work beside production data items.
+    pros:
+      - One workspace per domain to promote through a deployment pipeline
+      - Lineage from table to report is visible in a single workspace
+      - No cross-workspace permissions to set up
+    cons:
+      - Report authors need Contributor or higher, which also grants edit rights on the data items
+      - Mixed workloads blur who owns which item
+      - Row-level rules in the model do not apply to authors with edit roles
+    adr_context: >-
+      Reports and semantic models were kept in the Gold workspace next to the lakehouse or warehouse
+      they read. A small team owns all three, and a single promotion path was preferred over extra
+      workspaces. Authors have edit rights on the data items, and that exposure was accepted.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-workspaces-workspace-level-planning
+        title: "Power BI implementation planning: Workspaces at the workspace level"

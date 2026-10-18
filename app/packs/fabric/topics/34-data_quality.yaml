@@ -1,0 +1,88 @@
+id: data_quality
+title: Data quality
+situation: >-
+  Quality checks can run inside your processing, in the catalog, or in an outside tool. Fabric
+  materialized lake view constraints can fail a refresh or drop bad rows. Purview Unified Catalog
+  data quality profiles Fabric lakehouse tables and scores them against rules. Decide where each
+  rule lives and who reads the result.
+intake:
+  - Which tables are critical enough to stop a refresh when a rule fails?
+  - Who triages a failed rule, and where do they look?
+  - Do you already license Purview or an external quality tool?
+recommendation_note: ''
+adr_context: >-
+  The data quality approaches listed were chosen, each for the scope named in its option. Rules that
+  must stop bad data run inside processing, and rules that report quality to data owners run in the
+  catalog or tool named. Each rule has an owner who handles failures.
+options:
+  - value: notebook_checks
+    label: Checks in notebooks and views
+    description: Rules run inside Spark notebooks, pipelines or materialized lake view constraints during processing.
+    tradeoff: Rules run where the data is and can stop a load, but they are code with no estate-wide score.
+    pros:
+      - A FAIL constraint stops a materialized lake view refresh at the first bad row
+      - A DROP constraint removes bad rows and shows the dropped count in lineage
+      - No extra licence beyond Fabric
+    cons:
+      - Rules are code that your team writes and maintains
+      - Results sit with each run, with no quality score across the estate
+      - If both DROP and FAIL are defined on a view, FAIL takes precedence
+    adr_context: >-
+      Quality checks run inside processing. Constraints on materialized lake views and checks in
+      notebooks stop or filter bad rows between layers, and failures raise a job alert. The team
+      maintains the rules as code in Git.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-engineering/materialized-lake-views/data-quality
+        title: Data quality in materialized lake views
+  - value: purview_data_quality
+    label: Purview data quality
+    description: Unified Catalog profiles Fabric lakehouse tables, applies rules and publishes scores per data product.
+    tradeoff: Rules, scores and ownership sit in one catalog, but it needs Purview licensing and setup.
+    pros:
+      - Rules and quality scores are managed per governance domain and data product
+      - Supports Delta, Iceberg and Parquet data in Fabric lakehouses
+      - Error records can be written to a Fabric lakehouse for review
+    cons:
+      - Needs a Data Map scan, a managed identity connection and Contributor on the workspace
+      - Only assets added to a data product can be profiled and scanned
+      - The OneLake setting for apps external to Fabric must be on
+    adr_context: >-
+      Purview data quality was chosen to score curated lakehouse tables. Tables are added to data
+      products, scanned with a managed identity connection, and checked against rules. Error
+      records go to a lakehouse for the data owner to review.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/purview/unified-catalog-data-quality-fabric-lakehouse
+        title: Set up data quality for Fabric Lakehouse data
+      - url: https://learn.microsoft.com/purview/unified-catalog-data-quality-troubleshooting
+        title: Data quality troubleshooting
+      - url: https://learn.microsoft.com/purview/unified-catalog-data-quality-error-records
+        title: Data quality error records
+  - value: third_party
+    label: Third-party tool
+    description: An outside quality tool runs checks against Fabric tables through the SQL endpoint, OneLake APIs or Spark.
+    tradeoff: Reuses tools your team knows, but adds a licence, an identity and results outside Fabric.
+    pros:
+      - Reuses existing tools and skills
+      - Reaches data through the SQL analytics endpoint or OneLake storage APIs
+      - Python libraries can be installed into Fabric environments for Spark runs
+    cons:
+      - Separate licence, operations and identity to manage
+      - Results sit outside Fabric governance and lineage
+      - Checks run on Fabric capacity when they query the data
+    adr_context: >-
+      An external data quality tool was chosen and connects to Fabric through the SQL analytics
+      endpoint or OneLake APIs. Its service identity has read access only, and failed checks are
+      sent to the data owner. Results are kept in the tool, not in Fabric.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-access-api
+        title: Connecting to Microsoft OneLake
+      - url: https://learn.microsoft.com/fabric/data-engineering/lakehouse-sql-analytics-endpoint
+        title: What is the SQL analytics endpoint for a lakehouse?
+      - url: https://learn.microsoft.com/fabric/data-engineering/materialized-lake-views/data-quality
+        title: Data quality in materialized lake views

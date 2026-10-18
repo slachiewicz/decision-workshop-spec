@@ -1,0 +1,93 @@
+id: data_retention
+title: Retention and archival
+situation: >-
+  Data kept forever costs storage and widens risk, and data deleted too early breaks audits. Fabric
+  gives separate levers: Delta VACUUM and time travel for table history, OneLake soft delete for
+  accidental deletes, and storage tiers with lifecycle rules for old files. Soft-deleted data stays
+  for seven days and is billed like active data.
+intake:
+  - How long must data stay queryable online, and how long only archived?
+  - Do laws or contracts set a minimum or maximum retention period for any dataset?
+  - Who approves permanent deletion?
+recommendation_note: Set an online window and move older files to cooler tiers. Record the window in the ADR.
+adr_context: >-
+  Data stays online for the chosen window and then moves to cooler storage tiers by lifecycle rule.
+  Delta tables are vacuumed on the default seven-day threshold or longer, and the online window is
+  recorded with the decision so audits can check it.
+options:
+  - value: keep_everything
+    label: Keep everything
+    description: No data is archived or removed on a schedule. All layers stay in the hot tier.
+    tradeoff: Nothing is lost, but storage cost grows without limit and there is no deletion path.
+    pros:
+      - No history is lost and nothing needs scheduling
+      - Any past table version within Delta retention can be queried
+    cons:
+      - Storage grows without limit, and old unreferenced files pile up unless VACUUM runs
+      - No planned way to delete data when a retention limit applies
+      - Old data stays in the hot tier at the highest storage rate
+    adr_context: >-
+      Everything is kept in the hot tier with no archive or deletion schedule. This was chosen
+      because the data volume is small and no retention limit applies. Delta tables are still
+      vacuumed to remove files that are no longer referenced.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-engineering/lakehouse-table-maintenance
+        title: Run Delta table maintenance in lakehouse
+      - url: https://learn.microsoft.com/fabric/data-engineering/delta-lake-vacuum
+        title: VACUUM Delta tables
+  - value: windows_archive
+    label: Windows and archive
+    description: Data stays online for a set window, then lifecycle rules move it to cool or cold storage.
+    tradeoff: Lower storage cost for old data, but reads from cool and cold tiers use more capacity.
+    pros:
+      - Lifecycle rules move files by age, for example cool after 30 days without modification
+      - Cold storage lowers the monthly storage rate for data kept for years
+      - One policy per workspace can be scoped to folders by prefix
+    cons:
+      - Reading cool or cold data costs more capacity units than hot data
+      - Early movement or deletion before 30 days (cool) or 90 days (cold) is charged
+      - One policy per workspace, up to 10 rules, and tier changes generate transaction charges
+    adr_context: >-
+      A retention window was set per layer, with older files moved to cool and then cold storage by
+      lifecycle rules. The team reviewed the higher capacity cost of reading archived data and set
+      the window so that normal reporting stays in the hot tier.
+    maturity: ga
+    as_of: '2026-10-18'
+    value_field_labels:
+      online_window:
+        label: Online window
+        hint: How long data stays in the hot tier before it is archived.
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-storage-tiers
+        title: OneLake storage tiers
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-lifecycle-management
+        title: OneLake lifecycle management
+  - value: regulatory_schedule
+    label: Regulatory schedule
+    description: A written schedule sets retention and disposal per dataset, enforced with lifecycle rules, VACUUM and soft delete.
+    tradeoff: Gives auditors evidence, but many datasets strain the limit of rules per workspace.
+    pros:
+      - Prefix filters let different folders follow different periods
+      - Written periods per dataset give auditors something to check
+      - Soft delete protects against accidental deletion for seven days
+    cons:
+      - A workspace allows 10 lifecycle rules, so many datasets need broad prefixes or more workspaces
+      - VACUUM below seven days needs a Spark setting change and can break readers
+      - A framed Direct Lake model needs its Delta version kept until it is refreshed
+    adr_context: >-
+      A formal retention schedule was adopted. Each dataset has a retention period, lifecycle rules
+      and vacuum settings that follow it, and permanent removal lags deletion by the seven-day
+      soft-delete period. The schedule is reviewed with legal each year.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-lifecycle-management
+        title: OneLake lifecycle management
+      - url: https://learn.microsoft.com/fabric/onelake/soft-delete
+        title: Recover deleted files in OneLake
+      - url: https://learn.microsoft.com/fabric/data-engineering/lakehouse-table-maintenance
+        title: Run Delta table maintenance in lakehouse
+      - url: https://learn.microsoft.com/fabric/fundamentals/direct-lake-understand-storage
+        title: Understand Direct Lake query performance

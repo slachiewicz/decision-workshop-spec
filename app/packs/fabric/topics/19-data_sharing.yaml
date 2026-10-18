@@ -1,0 +1,133 @@
+id: data_sharing
+title: Data sharing surfaces
+situation: >-
+  Data leaves the lakehouse through shortcuts, T-SQL, storage APIs, GraphQL or cross-tenant
+  shares. Each surface has its own identity model and its own place to apply security. Treat this
+  as a map of the surfaces you will open: record which ones, and name an owner for each.
+intake:
+  - Which teams or applications outside the owning workspace need the data, and how do they connect today?
+  - Do partners in other tenants need access, and do they already have identities in your tenant?
+  - Which of these surfaces can enforce the row and column rules you need?
+recommendation_note: ''
+adr_context: >-
+  The data sharing surfaces listed here were opened for consumers outside the owning workspace.
+  Each surface has a named owner and uses the access model of its own layer, and the surfaces not
+  listed remain closed.
+options:
+  - value: shortcuts_internal
+    label: OneLake shortcuts
+    description: Other workspaces read Gold tables through OneLake shortcuts, with no copy.
+    tradeoff: No duplicated data, but the reader needs access on both the shortcut and its target.
+    pros:
+      - No duplicated data, and the shortcut stays in sync with the source
+      - Passthrough mode uses the caller's identity, so the source keeps control
+      - Delegated mode lets a team manage access for its own consumers
+    cons:
+      - The most restrictive permission of the shortcut path and target path applies
+      - OneLake security cannot be set directly on a OneLake-to-OneLake shortcut
+      - Shortcuts do not move data, so they do not help with region residency
+    adr_context: >-
+      OneLake shortcuts were chosen for sharing inside the tenant. Consumers read Gold tables in
+      place, with no second copy, and access is the intersection of rights on the shortcut path and
+      the target. Data residency is therefore unchanged by sharing.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-engineering/lakehouse-shortcuts
+        title: Shortcuts in a lakehouse
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-shortcut-security
+        title: OneLake shortcut security
+  - value: sql_endpoint
+    label: SQL analytics endpoint
+    description: Consumers query Delta tables with read-only T-SQL through the SQL analytics endpoint.
+    tradeoff: Familiar SQL tools and permissions, but read-only and limited to Delta tables.
+    pros:
+      - Works with SQL tools and Power BI through the TDS endpoint
+      - Views, functions and stored procedures can encapsulate business logic
+      - SQL granular permissions give row and object security
+    cons:
+      - You cannot insert, update or delete through it, because it is read-only
+      - Only Delta tables appear; Parquet and CSV files cannot be queried
+      - Queries sent here bypass rules that a semantic model enforces
+    adr_context: >-
+      The SQL analytics endpoint was opened for consumers who work in T-SQL. It gives read-only
+      access to Delta tables, and security is set with SQL permissions on views and tables. Teams
+      that need writes use Spark or a warehouse instead.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-engineering/lakehouse-sql-analytics-endpoint
+        title: What is the SQL analytics endpoint for a lakehouse?
+      - url: https://learn.microsoft.com/fabric/data-engineering/lakehouse-overview
+        title: What is a lakehouse in Microsoft Fabric?
+  - value: onelake_direct
+    label: OneLake storage APIs
+    description: Tools and apps read OneLake files with ADLS Gen2 or Blob APIs through the OneLake endpoint.
+    tradeoff: Any ADLS-compatible tool can connect, but permissions are managed in Fabric, not through the API.
+    pros:
+      - ADLS Gen2 and Blob tools work by changing the URI to the OneLake endpoint
+      - Azure Databricks, Storage Explorer and AzCopy can connect
+      - The ABFS driver is supported for Spark-style access
+    cons:
+      - Permissions and item updates cannot be managed through ADLS APIs
+      - Some tools block the OneLake endpoint during URL validation
+      - Third-party engines enforce OneLake security only when authorized, which is in preview
+    adr_context: >-
+      Direct access through the OneLake storage APIs was opened for tools that speak ADLS Gen2 or
+      Blob. Access is governed by Fabric roles and OneLake security, not by storage-account keys.
+      Third-party engines are used only where they can enforce OneLake security.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-access-api
+        title: Connecting to Microsoft OneLake
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-overview
+        title: What is OneLake?
+      - url: https://learn.microsoft.com/fabric/onelake/security/get-started-security
+        title: Data security in OneLake
+  - value: graphql_api
+    label: API for GraphQL
+    description: A GraphQL API item exposes chosen tables and views to applications through one endpoint.
+    tradeoff: Applications get a typed API with no backend code, but resolvers cannot be customized.
+    pros:
+      - Schema, resolvers and endpoint are generated from the data sources
+      - Clients request only the fields they need, in one call
+      - Relationships let one query return related entities
+    cons:
+      - Every exposed table or view must have a primary key
+      - Sources on a SQL analytics endpoint are read-only, so only queries work
+      - Resolvers cannot be edited; custom logic needs a stored procedure
+    adr_context: >-
+      An API for GraphQL item was chosen for applications that need typed access to curated tables.
+      Only chosen objects with primary keys are exposed, and custom logic is placed in stored
+      procedures because resolvers cannot be edited.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-engineering/api-graphql-overview
+        title: What is Microsoft Fabric API for GraphQL?
+      - url: https://learn.microsoft.com/fabric/data-engineering/graphql-faq
+        title: Fabric API for GraphQL frequently asked questions
+  - value: external_sharing
+    label: External data sharing
+    description: Share folders or tables read-only with users in another Fabric tenant through a cross-tenant shortcut.
+    tradeoff: Partners read live data with no copy, but both tenants need the feature and the share can be revoked.
+    pros:
+      - Data is shared in place with no copy, and changes appear straight away
+      - No Microsoft Entra B2B guest account is needed
+      - Shares can be revoked at any time
+    cons:
+      - Fabric admins must enable the feature in both tenants
+      - The invitation expires after 90 days, and consumers can accept only into a lakehouse
+      - Revoking a share can seriously affect the consuming tenant
+    adr_context: >-
+      External data sharing was chosen for partners with their own Fabric tenant. Curated tables
+      are shared read-only in place, and each share has a named owner who can revoke it. Partners
+      without a Fabric tenant are served through another surface.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/governance/external-data-sharing-overview
+        title: External data sharing in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/governance/external-data-sharing-create
+        title: Create an external data share

@@ -1,0 +1,64 @@
+id: cost_attribution
+title: Cost attribution
+situation: >-
+  Fabric bills by capacity, not by item. The Capacity Metrics app shows consumption in capacity
+  unit seconds by capacity, workspace and item for the last 14 days. How you pass cost to teams
+  depends on how cleanly workspaces map to cost owners.
+intake:
+  - Does finance expect a bill per business unit, or one platform cost?
+  - Can each workspace be mapped to exactly one cost owner?
+  - Who reviews the Capacity Metrics app, and how often?
+recommendation_note: Start with capacity-level cost. Add chargeback when finance asks for it and workspaces map to owners.
+adr_context: >-
+  Cost is attributed at capacity level. The platform team carries the capacity bill and reports
+  consumption by workspace and item from the Capacity Metrics app. Chargeback to teams can be added
+  later if workspaces map cleanly to owners.
+options:
+  - value: capacity_level
+    label: Capacity-level
+    description: The platform team carries the capacity bill and reports consumption without charging it on.
+    tradeoff: Simple to run, but teams have little reason to trim heavy items.
+    pros:
+      - No tagging or allocation rules to maintain
+      - The metrics app shows consumption by workspace and item to find heavy users
+      - One predictable budget line
+    cons:
+      - Teams do not see a cost for what they use
+      - The app's compute views cover 14 days, so trend history needs your own export
+      - Usage data arrives 10 to 15 minutes late
+    adr_context: >-
+      Capacity-level attribution was chosen. The capacity cost is a platform budget line, and the
+      platform team reviews consumption by workspace and item in the Capacity Metrics app to find
+      heavy items. Teams are not charged for their use.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/enterprise/metrics-app
+        title: What is the Microsoft Fabric Capacity Metrics app?
+      - url: https://learn.microsoft.com/fabric/enterprise/capacity-planning-troubleshoot-consumption
+        title: "Troubleshooting guide: Monitor and identify capacity usage"
+  - value: chargeback_workspace_domain
+    label: Chargeback by workspace or domain
+    description: Consumption by workspace is allocated to the domain or team that owns the workspace.
+    tradeoff: Teams see what they use, but it needs a clean workspace-to-owner map and a data feed.
+    pros:
+      - The Capacity Metrics app reports capacity unit consumption by workspace
+      - Domains group workspaces by business area, so costs can roll up
+      - Teams see the effect of their own heavy items
+    cons:
+      - Needs each workspace mapped to a single cost owner
+      - Shared items and mixed workspaces have no fair split
+      - Workspace and item lists refresh once a day, so moves show up the next day
+    adr_context: >-
+      Chargeback by workspace and domain was chosen. Each workspace has one cost owner, domains roll
+      up workspaces, and monthly consumption from the Capacity Metrics app is allocated to the
+      owning team. Shared items are charged to the platform team.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/enterprise/metrics-app
+        title: What is the Microsoft Fabric Capacity Metrics app?
+      - url: https://learn.microsoft.com/fabric/enterprise/metrics-app-monitor-capacity-throttling
+        title: Monitor capacity and throttling in the Fabric Capacity Metrics app preview
+      - url: https://learn.microsoft.com/fabric/governance/domains
+        title: Fabric domains

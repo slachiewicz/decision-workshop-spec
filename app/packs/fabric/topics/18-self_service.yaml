@@ -1,0 +1,90 @@
+id: self_service
+title: Self-service posture
+situation: >-
+  Self-service decides who may build content, not only who may read it. Microsoft's guidance
+  favours managed self-service: data is prepared centrally, and business users build reports on
+  shared semantic models. Your answer sets who gets Build permission, where creators may publish,
+  and how much training and review you need.
+intake:
+  - Who builds reports outside the BI team today, and what do they build on?
+  - Who would certify a shared semantic model, and against which checklist?
+  - How much capacity do you have for training, office hours and review?
+recommendation_note: ''
+adr_context: >-
+  A self-service posture was chosen to define who may create content on the platform. It sets who
+  receives Build permission on shared semantic models, where creators publish, and which review
+  process applies before content is endorsed.
+options:
+  - value: consumers_only
+    label: Consumers only
+    description: Only the BI team builds. Everyone else reads reports and apps.
+    tradeoff: Tightest control and fewest models, but every change queues behind the BI team.
+    pros:
+      - Fewest models and reports to govern and certify
+      - No Build permission requests to approve
+      - Clear ownership of every item
+    cons:
+      - Every new report or change queues behind the BI team
+      - Power users have no route to Build permission on shared models
+      - Demand for analysis may move to tools outside the platform
+    adr_context: >-
+      Consumers-only was chosen. The BI team builds all semantic models and reports, and business
+      users read through apps or workspace access. Build permission is not offered, which keeps the
+      number of models small at the cost of a single delivery queue.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-content-distribution-sharing
+        title: "Power BI implementation planning: Content distribution and sharing"
+      - url: https://learn.microsoft.com/power-bi/guidance/fabric-adoption-roadmap-content-ownership-and-management
+        title: "Microsoft Fabric adoption roadmap: Content ownership and management"
+  - value: governed_self_service
+    label: Governed self-service
+    description: Business users build reports on shared, certified semantic models and publish to their own workspaces.
+    tradeoff: Reuse of a few trusted models, but it needs a certification process and named model owners.
+    pros:
+      - Few shared models give one version of the truth
+      - Certified and promoted badges show creators which data to trust
+      - Creators hold Read and Build only, so row-level security still applies
+    cons:
+      - Needs a certification process, reviewers and owners for each shared model
+      - Models must be marked discoverable and Build requests must be approved
+      - Creators need a Pro licence to share Power BI content
+    adr_context: >-
+      Governed self-service was chosen. A central team maintains and certifies shared semantic
+      models, and business users build reports on them with Read and Build permission in their own
+      workspaces. Row-level security stays in force for those creators.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-usage-scenario-managed-self-service-bi
+        title: "Power BI usage scenarios: Managed self-service BI"
+      - url: https://learn.microsoft.com/power-bi/collaborate-share/service-endorsement-overview
+        title: "Promote and certify Power BI content with endorsement"
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-content-distribution-sharing
+        title: "Power BI implementation planning: Content distribution and sharing"
+  - value: creator_program
+    label: Creator programme
+    description: Trained creators also extend shared models with their own data and share what they build.
+    tradeoff: Fastest answers to business questions, but more models and reports to inventory and support.
+    pros:
+      - Composite models let departments add data without copying the shared model
+      - Mentoring and champions spread skills beyond the BI team
+      - Business units answer new questions without waiting for a central release
+    cons:
+      - More models and reports to inventory, monitor and retire
+      - Creators who share content need training on appropriate sharing
+      - Needs Centre of Excellence time for office hours and reviews
+    adr_context: >-
+      A creator programme was chosen. Trained business creators build reports on shared models and
+      extend them with department data. A Centre of Excellence provides training and review, and the
+      team accepted a larger inventory of models and reports.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-usage-scenario-customizable-managed-self-service-bi
+        title: "Power BI usage scenarios: Customizable managed self-service BI"
+      - url: https://learn.microsoft.com/power-bi/guidance/fabric-adoption-roadmap-content-ownership-and-management
+        title: "Microsoft Fabric adoption roadmap: Content ownership and management"
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-content-distribution-sharing
+        title: "Power BI implementation planning: Content distribution and sharing"

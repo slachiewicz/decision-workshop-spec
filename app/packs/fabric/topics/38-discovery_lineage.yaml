@@ -1,0 +1,69 @@
+id: discovery_lineage
+title: Discovery and lineage
+situation: >-
+  People need to find data and see where it comes from. The OneLake catalog is built into Fabric:
+  it lists the items you can access, with lineage, endorsement and sensitivity. Purview Unified
+  Catalog adds a tenant-wide catalog that can also cover non-Fabric sources and takes Fabric
+  metadata and lineage in through scans.
+intake:
+  - Do you need to catalogue sources outside Fabric as well?
+  - Who curates descriptions, glossary terms and endorsements?
+  - Do you already hold Purview licences and a team to run scans?
+recommendation_note: ''
+adr_context: >-
+  The catalog listed was chosen as the place where people find data and trace lineage. Descriptions
+  and endorsements are curated there by named owners, and lineage is used for impact analysis
+  before a change.
+options:
+  - value: onelake_catalog
+    label: OneLake catalog
+    description: Use the catalog built into Fabric for discovery, lineage, endorsement and governance insights.
+    tradeoff: Nothing extra to license or scan, but it covers Fabric items only.
+    pros:
+      - Everything except Purview-dependent features works with a Fabric licence
+      - Domain filter, lineage view and endorsement badges are built in
+      - Governance insights and recommended actions point to gaps
+    cons:
+      - Covers Fabric items, not the wider data estate
+      - Users see only items they can access, plus discoverable semantic models
+      - Labels, protection policies and DLP still need Purview licensing
+    adr_context: >-
+      The OneLake catalog was chosen for discovery and lineage. Teams curate descriptions and
+      endorsement on their items, domains filter the view, and lineage supports impact analysis.
+      Sources outside Fabric are not catalogued here.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/governance/onelake-catalog-overview
+        title: OneLake catalog overview
+      - url: https://learn.microsoft.com/fabric/governance/get-started-with-fabric-governance
+        title: Get started with Fabric governance
+      - url: https://learn.microsoft.com/fabric/governance/onelake-catalog-explore
+        title: Find and explore data in the OneLake catalog
+  - value: purview_unified_catalog
+    label: Purview Unified Catalog
+    description: Scan Fabric into the Purview Data Map and curate data products, glossary terms and quality scores.
+    tradeoff: One catalog across Fabric and other sources, but it needs Purview licensing, scans and roles.
+    pros:
+      - Fabric metadata and lineage are ingested automatically when the tenant is scanned
+      - Can catalogue sources beyond Fabric
+      - Glossary terms and health management sit in one place
+    cons:
+      - Needs Purview licensing, scans and a second set of roles
+      - Live view of Fabric workspaces is in preview
+      - Search results depend on Data Map permissions, not Fabric permissions
+    adr_context: >-
+      Purview Unified Catalog was chosen as the catalog for the whole data estate. The Fabric tenant
+      is scanned so that metadata and lineage flow in, and data stewards curate glossary terms and
+      data products there. The OneLake catalog remains available inside Fabric.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/architecture/example-scenario/dataplate2e/data-platform-end-to-end
+        title: Analytics end-to-end with Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/governance/microsoft-purview-fabric
+        title: Use Microsoft Purview to protect Microsoft Fabric
+      - url: https://learn.microsoft.com/purview/data-governance-roles-permissions
+        title: Data governance roles and permissions in Microsoft Purview
+      - url: https://learn.microsoft.com/fabric/governance/governance-compliance-overview
+        title: Governance overview and guidance

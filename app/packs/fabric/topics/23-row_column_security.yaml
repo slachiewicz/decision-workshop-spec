@@ -1,0 +1,113 @@
+id: row_column_security
+title: Row and column security
+situation: >-
+  Row and column rules can live in OneLake, in the semantic model, or on a SQL endpoint. Where you
+  put them decides which engines enforce them. OneLake security applies across Fabric engines to
+  the Viewer role. Model rules apply only inside that model, and not to users with write
+  permission on it.
+intake:
+  - Which tables hold data that some readers must not see, by row or by column?
+  - Do the same people reach data through reports, SQL and notebooks, or only through reports?
+  - Who maintains the mapping of users to the values they may see?
+recommendation_note: ''
+adr_context: >-
+  The row and column security patterns listed were chosen, each at the layer named in its option.
+  Rules defined in OneLake apply to every Fabric engine for the Viewer role, and rules defined in a
+  semantic model apply only to that model. The team recorded which tables each rule protects.
+rule_reasons:
+  dl_sql_ignores_onelake: >-
+    Direct Lake on SQL endpoint checks access on the SQL analytics endpoint, not in OneLake security
+    roles, so OneLake rules are not applied as written there.
+options:
+  - value: none
+    label: No row or column rules
+    description: Everyone with access to a table sees all of its rows and columns.
+    tradeoff: Simplest to run, but any reader sees everything in the tables they can open.
+    pros:
+      - No rules to write, test or maintain
+      - No risk of a rule hiding data from a report by mistake
+    cons:
+      - Any reader of a table sees every row and column
+      - Restricting later means reworking tables, roles or models
+    adr_context: >-
+      No row or column security was applied. Access is controlled at workspace, item and table
+      level, and every reader of a table sees all of it. The team judged the data suitable for that
+      audience and records the assumption.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/security/get-started-security
+        title: Data security in OneLake
+  - value: onelake_security
+    label: OneLake security roles
+    description: Roles on a lakehouse set table, row and column access, enforced across Fabric engines.
+    tradeoff: Defined once for every engine, but it does not bind Admin, Member and Contributor, and has rule limits.
+    pros:
+      - Defined once and enforced by Spark, the SQL analytics endpoint and Direct Lake on OneLake
+      - Roles take Microsoft Entra users and groups as members
+      - Direct Lake on OneLake keeps in-memory speed with these rules
+    cons:
+      - Does not restrict workspace Admin, Member or Contributor roles, which can read all data
+      - Row and column rules for a user must sit in a single role, or queries fail
+      - RLS rules cannot be dynamic or span several tables
+    adr_context: >-
+      OneLake security roles were chosen to enforce table, row and column rules in one place for all
+      Fabric engines. Consumers hold the Viewer role, and row and column rules are combined in one
+      role per user. Editing roles in the workspace are limited to the platform team.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/security/table-column-row-security
+        title: Table, column, and row-level security in OneLake
+      - url: https://learn.microsoft.com/fabric/onelake/security/create-manage-roles
+        title: Create and manage OneLake security roles
+      - url: https://learn.microsoft.com/fabric/fundamentals/direct-lake-security-integration
+        title: Integrate Direct Lake security
+  - value: model_rls_groups
+    label: Model RLS by group
+    description: Roles in the semantic model filter rows by Entra group, and consumers read only through the model.
+    tradeoff: Familiar DAX filters, but they bind only the model and not users with write permission.
+    pros:
+      - Roles map to Entra security groups, so membership is managed by the group owner
+      - Works with Import, DirectQuery and Direct Lake models
+      - Applies to the Viewer role even when Viewers hold Build permission
+    cons:
+      - Not enforced for users with write permission, such as Admin, Member and Contributor
+      - Applies only inside the model; SQL and notebook access bypass it
+      - Needs a fixed identity if consumers have no access to the lakehouse
+    adr_context: >-
+      Row-level security was defined in the semantic model with roles mapped to Entra groups.
+      Consumers read through reports and apps with the Viewer role. Because model rules do not bind
+      other engines, consumers are not given direct access to the lakehouse.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/security/service-admin-row-level-security
+        title: Row-level security (RLS) with Power BI
+      - url: https://learn.microsoft.com/fabric/fundamentals/direct-lake-security-integration
+        title: Integrate Direct Lake security
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-security-report-consumer-planning
+        title: "Power BI implementation planning: Report consumer security planning"
+  - value: dynamic_rls
+    label: Dynamic RLS with a mapping table
+    description: One model role filters rows by the signed-in user against a mapping table of users and allowed values.
+    tradeoff: One role serves every user, but you must keep the mapping table current and test identities.
+    pros:
+      - A single role definition filters differently for each user
+      - Access changes by editing the mapping table, not the role
+      - A dataflow can keep identity data in sync with Microsoft Entra ID
+    cons:
+      - The mapping must match what USERPRINCIPALNAME returns, which can differ for guest users
+      - Test as role uses your own identity, so guests must be tested as themselves
+      - Embedded apps with service principals do not return the end user's identity
+    adr_context: >-
+      Dynamic row-level security was chosen. A mapping table links each user principal name to the
+      values that user may see, and one model role filters on it. The team tests with real accounts,
+      including guests, and assigns owners to keep the mapping current.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/security/service-admin-row-level-security
+        title: Row-level security (RLS) with Power BI
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-security-report-consumer-planning
+        title: "Power BI implementation planning: Report consumer security planning"

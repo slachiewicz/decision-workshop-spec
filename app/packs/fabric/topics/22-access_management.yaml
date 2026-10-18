@@ -1,0 +1,64 @@
+id: access_management
+title: Access management
+situation: >-
+  Access follows identities. Groups let you change who sees what by editing membership, not by
+  editing many grants across workspaces, items and OneLake security roles. Fabric accepts security
+  groups, mail-enabled security groups, distribution lists and Microsoft 365 groups for workspace
+  roles.
+intake:
+  - Which groups does the identity team already maintain, and who may edit their membership?
+  - How many workspaces and roles would need their own groups?
+  - Do contractors or guests need access, and for how long?
+recommendation_note: Assign roles to Entra groups. Keep individual grants for short-lived exceptions.
+adr_context: >-
+  Roles are assigned to Microsoft Entra groups, not to individuals. Group membership is the one
+  place where access changes, workspace roles map to groups per workspace, and individual grants
+  are limited to documented, short-lived exceptions.
+options:
+  - value: entra_groups
+    label: Entra groups
+    description: Workspace roles, item permissions and OneLake roles are assigned to Microsoft Entra groups.
+    tradeoff: Access changes in one place, but you must create, name and own more groups.
+    pros:
+      - Joiners and leavers are handled by editing group membership
+      - A person in several groups gets the highest role they are assigned
+      - Self-service group management can delegate upkeep to trained owners
+    cons:
+      - More groups to create, such as one per role per workspace
+      - Group naming and ownership need a rule
+      - Role changes take effect only when the user next signs in
+    adr_context: >-
+      Microsoft Entra groups were chosen for all role assignments. Groups are created per role and
+      workspace where needed, named by a common rule, and each has an owner. Membership changes
+      replace repeated edits to individual grants.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/roles-workspaces
+        title: Roles in workspaces in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/fundamentals/give-access-workspaces
+        title: Give users access to workspaces
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-workspaces-workspace-level-planning
+        title: "Power BI implementation planning: Workspaces at the workspace level"
+  - value: individual_grants
+    label: Individual grants
+    description: Roles and permissions are granted to named users one by one.
+    tradeoff: Quick for a small team, but every change is repeated and the list is hard to audit.
+    pros:
+      - Fastest to set up for a handful of people
+      - Each person gets exactly the access you grant
+    cons:
+      - Each change is repeated in every workspace and item
+      - Hard to see who holds which access across the estate
+      - Leavers keep access until someone removes each grant
+    adr_context: >-
+      Individual grants were chosen for a small team with few workspaces. The team accepted that
+      each joiner and leaver needs edits in every workspace, and agreed to move to groups when
+      the number of workspaces or users grows.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/give-access-workspaces
+        title: Give users access to workspaces
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-workspaces-workspace-level-planning
+        title: "Power BI implementation planning: Workspaces at the workspace level"

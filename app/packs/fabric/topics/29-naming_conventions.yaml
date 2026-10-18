@@ -1,0 +1,100 @@
+id: naming_conventions
+title: Naming conventions
+situation: >-
+  Names appear in OneLake paths, SQL objects, lineage views and the catalog, and they are costly to
+  change once reports and pipelines depend on them. Confirm one pattern for each object type and
+  check the defaults below. Keep personal and sensitive data out of names and tags.
+intake:
+  - Does your organisation already have a naming standard for Azure resources that this should follow?
+  - Which abbreviations and environment names must match other systems, such as Git branches or tickets?
+recommendation_note: ''
+adr_context: >-
+  Naming conventions were confirmed for workspaces, items, schemas, tables, columns and keys. The
+  patterns apply to all new objects, and existing objects are renamed only when they are next
+  changed. The chosen patterns are listed with the decision.
+options: []
+naming_sections:
+  - id: workspaces
+    title: Workspaces
+    blurb: Workspace names show in OneLake paths, URLs and the catalog. Choose one pattern for all environments.
+    fields:
+      - id: workspace_pattern
+        label: Data workspace pattern
+        hint: Tokens in braces are replaced. Avoid spaces and special characters, which the abfs driver rejects.
+        default: "{domain}-{layer}-{env}"
+      - id: reporting_workspace_pattern
+        label: Reporting workspace pattern
+        hint: Use a different token for the layer so data and reporting workspaces are easy to tell apart.
+        default: "{domain}-reports-{env}"
+      - id: environment_tokens
+        label: Environment tokens
+        hint: One short token per environment, used in workspaces, branches and pipelines.
+        default: "dev, test, prod"
+  - id: items
+    title: Items
+    blurb: Item names are for people. OneLake paths add the item type, so a prefix is not needed for uniqueness.
+    fields:
+      - id: lakehouse_prefix
+        label: Lakehouse prefix
+        hint: Short prefix from your abbreviation list.
+        default: lh_
+      - id: warehouse_prefix
+        label: Warehouse prefix
+        hint: Short prefix from your abbreviation list.
+        default: wh_
+      - id: pipeline_prefix
+        label: Pipeline prefix
+        hint: Add the source or target after the prefix, for example pl_sap_to_bronze.
+        default: pl_
+      - id: notebook_prefix
+        label: Notebook prefix
+        hint: Add the layer and purpose after the prefix, for example nb_silver_orders.
+        default: nb_
+      - id: semantic_model_prefix
+        label: Semantic model prefix
+        hint: Report-level measures should use a different marker so they do not collide with model measures.
+        default: sm_
+  - id: schemas_tables
+    title: Schemas and tables
+    blurb: Schemas group tables inside a lakehouse or warehouse. Names should read the same in Spark and T-SQL.
+    fields:
+      - id: bronze_schema
+        label: Bronze schema
+        hint: One schema per source system keeps raw tables apart.
+        default: "{source_system}"
+      - id: silver_schema
+        label: Silver schema
+        hint: Group conformed tables by business domain.
+        default: "{domain}"
+      - id: gold_schema
+        label: Gold schema
+        hint: Group business-ready tables by business domain or data product.
+        default: "{domain}"
+      - id: dimension_prefix
+        label: Dimension table prefix
+        hint: Applies to Gold dimension tables.
+        default: dim_
+      - id: fact_prefix
+        label: Fact table prefix
+        hint: Applies to Gold fact tables.
+        default: fact_
+  - id: columns_keys
+    title: Columns and keys
+    blurb: Column names flow into semantic models and reports, so rename them rarely and agree on style first.
+    fields:
+      - id: column_style
+        label: Column name style
+        hint: One casing style for all layers. Avoid spaces so Spark, T-SQL and DAX all accept the name.
+        default: snake_case
+      - id: surrogate_key_suffix
+        label: Surrogate key suffix
+        hint: Generated keys that join facts to dimensions.
+        default: _key
+      - id: business_key_suffix
+        label: Business key suffix
+        hint: Keys that come from the source system.
+        default: _id
+      - id: audit_columns
+        label: Audit columns
+        hint: Columns added to every table on load. Comma-separated list.
+        default: "_ingested_at, _source_system"

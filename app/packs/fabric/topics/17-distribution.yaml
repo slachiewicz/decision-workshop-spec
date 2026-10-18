@@ -1,0 +1,157 @@
+id: distribution
+title: Report distribution surfaces
+situation: >-
+  People reach reports in different ways: a packaged app, direct workspace access, email, Excel,
+  a phone, or inside your own application. Each surface has its own licence, permission and
+  capacity consequences. Workspace access is quick but exposes everything in the workspace, while
+  an app packages only a selected subset.
+intake:
+  - Which groups consume reports, and do they need everything in a workspace or only a selected subset?
+  - Do any consumers sit outside your tenant, or work inside an application you build?
+  - Which consumers rely on Excel or a phone as their main tool?
+recommendation_note: Use org apps as the main route. Add the other surfaces only for the audiences that need them.
+adr_context: >-
+  Org apps were chosen as the main way to distribute reports. An org app packages selected reports
+  with audiences, so consumers see a curated view without access to the whole workspace. Other
+  surfaces are added only for audiences that need them.
+options:
+  - value: org_app
+    label: Org app
+    description: Package reports, paginated reports, notebooks and real-time dashboards into an app with audiences.
+    tradeoff: Curated and audience-aware, but access to the app also grants read on the underlying models.
+    pros:
+      - Several org apps per workspace, each with its own audiences and navigation
+      - Consumers get a curated view without access to the workspace itself
+      - Access to included reports also reaches their semantic models, even in other workspaces
+    cons:
+      - Granting app access grants read on the underlying semantic models
+      - Changing access needs write and reshare permission on the included items, usually admins and members
+      - Existing workspace apps are not migrated automatically and coexist with org apps
+    adr_context: >-
+      Org apps were chosen to distribute reports. Each app packages a selected set of reports with
+      audiences, so consumers read curated content without workspace access. Access to an app also
+      grants read on the models behind its reports, and the team accepted that.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/explore-reports/org-app-items
+        title: Get started with org apps
+      - url: https://learn.microsoft.com/power-bi/collaborate-share/service-create-distribute-apps
+        title: Publish a workspace app in Power BI
+  - value: workspace_access
+    label: Workspace Viewer access
+    description: Consumers join the Viewer role and open reports directly in the workspace.
+    tradeoff: Fastest to set up, but Viewers can read all content in the workspace.
+    pros:
+      - No extra item to build or maintain
+      - Row-level rules in the model are enforced for the Viewer role
+      - Works for small teams that share one workspace
+    cons:
+      - Viewer gives read-only access to all content in the workspace, not a chosen subset
+      - Hard to curate what each audience sees
+      - Wide use of workspace roles makes oversharing likely
+    adr_context: >-
+      Workspace Viewer access was added for audiences that work inside one workspace. They read all
+      content there, and row-level rules still apply to the Viewer role. It was not used as the main
+      route because it cannot show different audiences different content.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-content-distribution-sharing
+        title: "Power BI implementation planning: Content distribution and sharing"
+      - url: https://learn.microsoft.com/fabric/fundamentals/give-access-workspaces
+        title: Give users access to workspaces
+  - value: subscriptions
+    label: Email subscriptions
+    description: Reports or dashboards arrive as scheduled emails with a snapshot and a link.
+    tradeoff: Reaches people who rarely open the portal, but needs licences and uses interactive capacity.
+    pros:
+      - Reaches consumers who do not open the portal
+      - Up to 24 subscriptions per report, each with its own recipients and schedule
+      - Dynamic per-recipient subscriptions send each person a filtered copy
+    cons:
+      - Subscribing others needs a Pro or PPU licence and a Contributor, Member or Admin role
+      - External recipients work only from workspaces on a paid, non-PPU capacity
+      - Rendering the report uses interactive capacity, and row-level security needs care
+    adr_context: >-
+      Email subscriptions were added for consumers who prefer a scheduled snapshot to opening the
+      portal. Creators need a Pro or Premium Per User licence to subscribe others, and the team
+      reviewed the row-level security warning before enabling subscriptions on secured models.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/collaborate-share/end-user-subscribe
+        title: Email subscriptions for reports and dashboards in the Power BI service
+      - url: https://learn.microsoft.com/power-bi/collaborate-share/power-bi-dynamic-report-subscriptions
+        title: Dynamic per recipient subscriptions for reports
+  - value: excel_live
+    label: Excel live connection
+    description: Analysts connect PivotTables in Excel to a published semantic model with Analyze in Excel.
+    tradeoff: Refreshable analysis in a familiar tool, but with fewer model features than Power BI.
+    pros:
+      - The workbook stays connected and refreshable instead of holding an export
+      - Row-level and object-level security still apply
+      - The model's sensitivity label is applied to the workbook
+    cons:
+      - Users need Build permission on the model, and an admin must enable the tenant setting
+      - Only Import models keep hierarchies; Direct Lake, DirectQuery and composite models do not
+      - Excel queries with MDX, and some model features such as field parameters do not work there
+    adr_context: >-
+      Excel live connections were enabled for analysts who work in PivotTables. They connect to the
+      shared semantic model with Build permission, so security rules and sensitivity labels carry
+      over. Users were told that some model features are not available in Excel.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/collaborate-share/office-integration/service-analyze-in-excel
+        title: Create Excel workbooks with refreshable Power BI data
+      - url: https://learn.microsoft.com/power-bi/collaborate-share/office-integration/service-analyze-power-bi-datasets-excel
+        title: Design refreshable reports in Excel with Power BI data
+  - value: mobile
+    label: Power BI mobile apps
+    description: Consumers open reports in the iOS and Android apps, with optional phone layouts.
+    tradeoff: Reports work on phones as they are, but good phone use needs a layout per report page.
+    pros:
+      - Any report opens in the mobile apps without changes
+      - Authors can add a portrait layout for each page
+      - Filters set in the report carry over to the phone
+    cons:
+      - Phone layouts show only in the mobile apps, not in a browser
+      - Authors must build and maintain a layout for each page
+      - Viewing needs a Pro or PPU licence, or content in a Premium or Fabric capacity
+    adr_context: >-
+      Mobile access through the Power BI apps was enabled for consumers who work away from a desk.
+      Authors of high-use reports add phone layouts. Viewing relies on content in a capacity, so
+      consumers do not need a per-user licence.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/create-reports/power-bi-create-mobile-optimized-report-about
+        title: Create mobile-optimized Power BI reports
+      - url: https://learn.microsoft.com/power-bi/explore-reports/mobile/mobile-apps-view-phone-report
+        title: View Power BI reports optimized for your phone
+      - url: https://learn.microsoft.com/power-bi/explore-reports/explore-reports-overview
+        title: Explore reports in Power BI
+  - value: embedded
+    label: Embedded in your application
+    description: Embed reports in an internal or customer-facing app with the Power BI embedding APIs.
+    tradeoff: Full control of the experience, but it needs a capacity and your own sign-in handling.
+    pros:
+      - In the app-owns-data model, end users need no Power BI licence
+      - You control the look and navigation with the JavaScript SDK
+      - Internal apps can authenticate against Microsoft Entra ID
+    cons:
+      - Production use needs an F, A, P or EM capacity
+      - For internal viewers, SKUs below F64 need a Pro or PPU licence for each viewer
+      - With app-owns-data, your application handles customer authentication
+    adr_context: >-
+      Embedding was chosen for audiences that use an application the team builds. Reports run on a
+      dedicated capacity, and the application authenticates users. Licence needs depend on whether
+      the audience is internal or external, and the team recorded that split.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/developer/embedded/embedded-analytics-power-bi
+        title: What is Power BI embedded analytics?
+      - url: https://learn.microsoft.com/power-bi/developer/embedded/embedded-capacity
+        title: Capacity and SKUs in Power BI embedded analytics

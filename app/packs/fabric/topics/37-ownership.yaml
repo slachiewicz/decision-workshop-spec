@@ -1,0 +1,88 @@
+id: ownership
+title: Ownership and stewardship
+situation: >-
+  Someone has to answer for each dataset: what it means, who may use it, and what to do when it is
+  wrong. Fabric domains group workspaces and delegate some settings to domain admins. Purview
+  Unified Catalog adds governance domains and data products with named owners. A central team can
+  also own everything, at a distance from the business.
+intake:
+  - Who in the business can answer questions about each dataset today?
+  - Do you want consumers to find and request data by product rather than by workspace?
+  - Who approves certification, and who may change a domain's settings?
+recommendation_note: ''
+adr_context: >-
+  The ownership model listed was chosen to name who answers for each dataset. Owners are recorded
+  in the structure named in the option, and each has authority to approve access and certify
+  content in their area.
+options:
+  - value: domain_owners
+    label: Domain owners
+    description: Fabric domains group workspaces by business area, with domain admins and contributors who own governance for them.
+    tradeoff: Ownership sits with the business area, but domains organise and delegate settings, not access.
+    pros:
+      - Domain admins edit descriptions, set contributors and assign workspaces
+      - Some tenant settings, such as certification and default sensitivity label, can be set per domain
+      - The OneLake catalog can be filtered by domain
+    cons:
+      - Domain assignment does not change who can see or open an item
+      - Only Fabric admins create, rename or delete top-level domains
+      - Domain contributors must also be workspace admins to assign a workspace
+    adr_context: >-
+      Domain owners were chosen. Fabric domains map to business areas, each with named domain admins,
+      and workspaces are assigned to them. Domain admins set certification rules and default labels
+      for their domain. Access remains controlled by workspace roles.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/governance/domains
+        title: Fabric domains
+      - url: https://learn.microsoft.com/fabric/admin/roles
+        title: Understand Microsoft Fabric admin roles
+  - value: data_products
+    label: Data products
+    description: Purview governance domains and data products give named owners to curated sets of assets for consumers to request.
+    tradeoff: Owners and consumers meet at a product, but it needs Purview licensing, scans and roles.
+    pros:
+      - A data product groups assets with a use case that consumers can find and request
+      - Governance domains hold roles, data quality scores and glossary terms
+      - Quality and lineage are tied to the product
+    cons:
+      - Needs Purview licensing and Data Map scans of Fabric
+      - A second set of roles and permissions to manage beside Fabric
+      - Only assets added to a data product can be quality-scanned
+    adr_context: >-
+      Data products were chosen. Curated Gold assets are grouped into Purview data products inside
+      governance domains, each with a named owner. Consumers find and request data by product, and
+      quality scores attach to the product.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/purview/data-governance-overview
+        title: Data governance with Microsoft Purview
+      - url: https://learn.microsoft.com/purview/data-governance-roles-permissions
+        title: Data governance roles and permissions in Microsoft Purview
+      - url: https://learn.microsoft.com/purview/unified-catalog-governance-domains-create-manage
+        title: Create and manage governance domains
+  - value: central_team
+    label: Central team
+    description: A platform or data office team owns all workspaces and answers for all datasets.
+    tradeoff: Consistent standards and few roles, but the owner is far from the business meaning of the data.
+    pros:
+      - One team applies one set of standards
+      - Fewest roles and settings to design
+      - Fabric admins can already see all workspaces and their content
+    cons:
+      - The central team may not know the meaning of each dataset
+      - Requests for changes and access queue behind one team
+      - Domain-level settings go unused
+    adr_context: >-
+      A central team owns all datasets. It approves access, certifies content and answers questions
+      about meaning, and domains are used only to group workspaces. The team accepted the distance
+      from the business and agreed to name a business contact for each dataset.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-content-distribution-sharing
+        title: "Power BI implementation planning: Content distribution and sharing"
+      - url: https://learn.microsoft.com/fabric/governance/domains
+        title: Fabric domains

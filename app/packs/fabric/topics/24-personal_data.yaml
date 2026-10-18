@@ -1,0 +1,86 @@
+id: personal_data
+title: Personal data handling
+situation: >-
+  Personal data brings duties to minimise it, restrict access and delete it on request. Where it
+  sits in your layers decides how hard it is to find, mask and remove. GDPR data subject requests
+  ask you to discover, access, correct, restrict, delete and export a person's data.
+intake:
+  - Which sources hold personal data, and do reports need identified or pseudonymised values?
+  - Who handles access and deletion requests, and within what time?
+  - Is a legal basis recorded for each dataset that holds personal data?
+recommendation_note: Isolate personal data and carry only what reports need into later layers.
+adr_context: >-
+  Personal data is isolated and minimised. Direct identifiers sit in separate, tightly controlled
+  tables, and later layers carry only what reports need. A request to find or delete a person's
+  data therefore touches a small, known set of tables.
+options:
+  - value: isolated_minimised
+    label: Isolated and minimised
+    description: Personal columns sit in separate tables or workspaces with tight access, and later layers carry only what is needed.
+    tradeoff: One place to find and delete a person's data, at the cost of extra tables and controlled joins.
+    pros:
+      - A data subject request has one known place to search and delete
+      - Column-level security and masking apply to narrow tables
+      - Gold carries no direct identifiers unless a report needs them
+    cons:
+      - Joining back to identity needs a controlled path
+      - Extra tables and pipelines to build and maintain
+      - Masking alone does not stop users with query access inferring values
+    adr_context: >-
+      Personal data was isolated in separate tables with restricted access, and only the columns
+      that reports need are passed to later layers. Deletion and access requests are run against
+      the isolated tables. Masking is used as a second layer, not as the control.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/compliance/regulatory/gdpr-data-subject-requests
+        title: Data Subject Requests and the GDPR and CCPA
+      - url: https://learn.microsoft.com/fabric/onelake/security/table-column-row-security
+        title: Table, column, and row-level security in OneLake
+      - url: https://learn.microsoft.com/fabric/data-warehouse/dynamic-data-masking
+        title: Dynamic data masking in Fabric Data Warehouse
+  - value: same_path
+    label: Same path as other data
+    description: Personal data flows through the same layers as other data and is protected with labels, masking and access rules.
+    tradeoff: Fewer pipelines, but identifiers sit in every layer and every copy.
+    pros:
+      - No separate pipelines or tables for personal data
+      - Sensitivity labels and masking apply without application changes
+      - Simple for datasets where nearly every column is personal
+    cons:
+      - Every layer and copy holds identifiers, so a deletion must reach each one
+      - Dynamic data masking does not stop users with query access inferring values
+      - Protection depends on rules staying correct in many places
+    adr_context: >-
+      Personal data follows the same path as other data through the layers. Sensitivity labels,
+      masking and row and column rules protect it, and a deletion request is run against every layer
+      that holds the data. The team accepted the larger deletion scope.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/governance/information-protection
+        title: Information protection in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/data-warehouse/dynamic-data-masking
+        title: Dynamic data masking in Fabric Data Warehouse
+      - url: https://learn.microsoft.com/compliance/regulatory/gdpr-data-subject-requests
+        title: Data Subject Requests and the GDPR and CCPA
+  - value: out_of_scope
+    label: Out of scope
+    description: No personal data is loaded to the platform. Sources are filtered or excluded upstream.
+    tradeoff: No data subject duties on the platform, but it depends on upstream filters holding.
+    pros:
+      - No data subject requests to run on the platform
+      - Simplest governance for the platform team
+    cons:
+      - Depends on upstream filtering; personal data in free-text fields can still arrive
+      - Reports lose person-level analysis
+      - The decision must be rechecked whenever a source changes
+    adr_context: >-
+      Personal data is out of scope for the platform. Sources are filtered or excluded before
+      loading, and the team owns a check that no identifiers arrive. A new source triggers a review
+      of this decision.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/compliance/regulatory/gdpr
+        title: General Data Protection Regulation
