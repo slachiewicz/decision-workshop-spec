@@ -13,7 +13,8 @@
     "check:engine": "vitest run tests --passWithNoTests",
     "check": "npm run typecheck && npm run check:packs && npm run check:engine",
     "check:links": "tsx scripts/check-links.ts",
-    "screenshots": "SCREENSHOTS=1 playwright test screenshots"
+    "screenshots": "SCREENSHOTS=1 playwright test screenshots",
+    "sample:adr": "tsx scripts/sample-adr.ts"
   },
   "dependencies": {
     "react": "19.3.0",
