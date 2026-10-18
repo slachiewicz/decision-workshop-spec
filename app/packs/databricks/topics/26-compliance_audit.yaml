@@ -1,0 +1,82 @@
+id: compliance_audit
+title: Compliance and audit
+situation: >-
+  Auditors ask who accessed which data, how a figure was derived and whether the platform
+  meets a named standard. Databricks records activity in system tables, tracks lineage in
+  Unity Catalog, and offers a compliance security profile and customer-managed keys for
+  regulated workloads. The posture you choose sets which of these you turn on and how long
+  you keep their output.
+intake:
+  - Which standards or regulators apply, such as HIPAA, PCI-DSS or FedRAMP, or is there only an internal policy?
+  - How long must you keep evidence of who accessed data, and who will query it?
+  - Does the organisation require its own encryption keys for platform data?
+recommendation_note: Turn on audit and lineage system tables, retain them beyond the default window, and add the compliance profile only when a standard needs it.
+adr_context: >-
+  An audit-ready posture was chosen. Audit and lineage system tables are enabled, copied to
+  a retained table that meets the evidence period, and reviewed on a schedule. The
+  compliance security profile and customer-managed keys are not enabled, because no
+  regulated data is in scope.
+options:
+  - value: minimal
+    label: Minimal
+    description: Default logging only. Nobody reviews activity on a schedule, and no standard is claimed.
+    tradeoff: Lowest effort, but gives weak answers when an auditor or incident asks who did what.
+    pros:
+      - No setup or retention work
+      - Fits a proof of concept with non-sensitive data
+    cons:
+      - Audit evidence may be missing or expire before it is needed
+      - No review means misuse can go unnoticed
+    adr_context: >-
+      A minimal compliance posture was chosen for this phase. Platform defaults apply, no
+      standard is claimed, and the decision is revisited before sensitive data is loaded.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/admin/system-tables/
+        title: System tables reference
+  - value: audit_ready
+    label: Audit-ready
+    description: Audit and lineage system tables are enabled, retained past the default period and queried on a schedule.
+    tradeoff: Answers most audit questions from your own data, at the cost of storage and review time.
+    pros:
+      - Audit logs show who accessed what, and lineage shows where data came from
+      - Account-level audit events are available from any workspace in the account
+      - Alerts can flag unusual activity
+    cons:
+      - Lineage tables keep a rolling year, so longer evidence needs a retained copy
+      - The audit log system table is documented as Public Preview
+    adr_context: >-
+      Audit and lineage system tables were enabled and are copied to retained tables that
+      cover the evidence period. A named owner reviews them on a schedule, and alerts flag
+      unusual access.
+    maturity: preview
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/admin/system-tables/audit-logs
+        title: Audit log system table reference
+      - url: https://docs.databricks.com/aws/en/admin/system-tables/lineage
+        title: Lineage system tables reference
+  - value: regulated
+    label: Regulated
+    description: The compliance security profile, with a compliance standard selected, plus customer-managed keys where the standard requires them.
+    tradeoff: Meets regulated-data requirements, but adds cost, restricts features and needs ongoing proof.
+    pros:
+      - The profile is required to process data under standards such as HIPAA and PCI-DSS
+      - It adds extra monitoring, a hardened compute image and enforced instance types
+      - Customer-managed keys keep key control with your organisation
+    cons:
+      - Charged as the Enhanced Security and Compliance add-on
+      - Some features are limited on workspaces with the profile enabled
+    adr_context: >-
+      A regulated posture was chosen. The compliance security profile is enabled on workspaces
+      that process regulated data, with the required standards selected, and customer-managed
+      keys protect platform data where the standard calls for them. Audit evidence follows the
+      audit-ready practice.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/security/privacy/security-profile
+        title: Compliance security profile
+      - url: https://docs.databricks.com/aws/en/security/keys/customer-managed-keys
+        title: Customer-managed keys for encryption

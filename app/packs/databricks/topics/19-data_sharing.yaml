@@ -1,0 +1,104 @@
+id: data_sharing
+title: Data sharing
+situation: >-
+  Data often has to leave the platform's own team boundary: to another business unit, a
+  partner, a customer or a regulator. Databricks offers several surfaces with different
+  trust levels. Pick the ones you will offer, because each one needs an owner, a review step
+  and an audit trail. This topic records what is offered, not which datasets are shared.
+intake:
+  - Who outside the platform team needs data, and are they on Databricks, another platform or no platform?
+  - Do recipients get the data or only query results, and must combined analysis keep each side's raw data private?
+  - Does any recipient need a commercial listing, or is sharing internal and free?
+recommendation_note: ''
+adr_context: >-
+  The sharing surfaces listed in this record were chosen. Every share is created by the data
+  owner, reviewed by the platform team, and logged through audit logs. Other ways of copying
+  data out of the platform are not supported.
+options:
+  - value: delta_sharing
+    label: OpenSharing (formerly Delta Sharing)
+    description: Read-only shares of Unity Catalog data to Databricks users or, through open connectors, to any platform.
+    tradeoff: Zero-copy sharing with audit, but each recipient must be set up and shares need an owner.
+    pros:
+      - Recipients on Databricks use their own Unity Catalog and see shared tables as a catalog
+      - Open sharing works for recipients on other platforms
+      - Provider and recipient actions are written to audit logs
+    cons:
+      - Shares are read-only, and some asset types work only for Databricks recipients
+      - Cross-region or cross-cloud sharing can add egress cost
+    adr_context: >-
+      OpenSharing, formerly Delta Sharing, was chosen for sharing governed data outside the
+      owning team. Shares are created by data owners and recipients are registered by the
+      platform team. Sharing activity is reviewed through audit logs.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/opensharing
+        title: What is OpenSharing?
+      - url: https://docs.databricks.com/aws/en/opensharing/share-data-databricks
+        title: Databricks-to-Databricks sharing protocol
+      - url: https://docs.databricks.com/aws/en/opensharing/share-data-open
+        title: Databricks-to-Open sharing protocol
+  - value: clean_rooms
+    label: Clean Rooms
+    description: A privacy-protecting environment where several parties run approved code on combined data without seeing each other's raw data.
+    tradeoff: Enables joint analysis of sensitive data, but each collaboration needs setup and runs on serverless compute.
+    pros:
+      - Parties collaborate without direct access to each other's data
+      - Collaborators can be on other clouds or regions
+      - Built on OpenSharing, with clean room events available as a system table
+    cons:
+      - Needs serverless compute, Unity Catalog and OpenSharing enabled on every participant
+      - Firewalled storage needs extra network configuration
+    adr_context: >-
+      Clean Rooms were chosen for collaborations where parties cannot reveal raw data to each
+      other. Each clean room has a named owner and approved notebooks, and its events are
+      reviewed through the clean room system table.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/clean-rooms/
+        title: What is Databricks Clean Rooms?
+  - value: marketplace
+    label: Databricks Marketplace
+    description: An exchange for publishing and consuming datasets, models, notebooks, apps and MCP servers.
+    tradeoff: Reaches many consumers or brings in third-party data, but listings need a provider process.
+    pros:
+      - Consumers find and request listings from inside their workspace
+      - Uses OpenSharing, so delivery stays governed in Unity Catalog
+      - Can serve as an internal catalogue of data products
+    cons:
+      - Publishing needs a provider profile and an approval flow
+      - Commercial listings add legal and support work
+    adr_context: >-
+      Databricks Marketplace was chosen to publish and consume listings. Providers are
+      approved by the platform team, and consumers request access through their workspace.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/marketplace/
+        title: What is Databricks Marketplace?
+      - url: https://docs.databricks.com/aws/en/marketplace/become-provider
+        title: Become a Databricks Marketplace provider
+  - value: sql_endpoint
+    label: SQL warehouse endpoint
+    description: Partners or systems query governed tables through a SQL warehouse using the ODBC or JDBC drivers or the SQL APIs.
+    tradeoff: Simple for known consumers, but you carry their query cost and manage their identities.
+    pros:
+      - Consumers get current data with no copy
+      - Works with any tool that has an ODBC or JDBC driver
+      - Unity Catalog grants and audit apply to every query
+    cons:
+      - Recipients need a Databricks identity, and warehouse compute is billed to you
+      - Not suited to large unstructured exports
+    adr_context: >-
+      A SQL warehouse endpoint was chosen for known consumers that need current data. Each
+      consumer connects with its own service principal, and a dedicated warehouse is sized and
+      tagged so the cost can be charged back.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/integrations/jdbc-odbc-bi
+        title: Databricks ODBC and JDBC drivers
+      - url: https://docs.databricks.com/aws/en/sql/
+        title: Databricks SQL

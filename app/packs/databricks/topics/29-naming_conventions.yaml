@@ -1,0 +1,103 @@
+id: naming_conventions
+title: Naming conventions
+situation: >-
+  Names are hard to change after people build on them. Unity Catalog stores object names in
+  lowercase and does not allow periods, spaces or forward slashes, and names that contain
+  other special characters need backticks in SQL. Confirm a pattern for each kind of object
+  below, or edit the defaults, so catalogs, tables, jobs and principals read the same
+  everywhere.
+intake:
+  - Do existing standards for databases, tables or cloud resources already apply, and who owns them?
+  - Which environments and business domains need to be visible in a catalog name?
+  - Who approves a new name when two teams disagree?
+recommendation_note: ''
+adr_context: >-
+  The naming conventions in this record were confirmed. They apply to every new object.
+  Existing objects are renamed only when they are rebuilt. Names use lowercase letters,
+  digits and underscores, so no object needs quoting in SQL.
+options: []
+naming_sections:
+  - id: catalogs
+    title: Catalogs
+    blurb: A catalog is the main unit of isolation and access, so its name should show environment and domain.
+    fields:
+      - id: catalog_pattern
+        label: Catalog pattern
+        hint: Pattern for catalog names. Use the environment as a prefix so grants and bindings can follow it.
+        default: <env>_<domain>
+      - id: catalog_example
+        label: Example
+        hint: One real catalog name that follows the pattern above.
+        default: prod_sales
+  - id: schemas
+    title: Schemas
+    blurb: Schemas usually map to medallion layers, so a reader can tell the layer from the name.
+    fields:
+      - id: bronze_schema
+        label: Bronze schema
+        hint: One raw schema per source system.
+        default: bronze_<source>
+      - id: silver_schema
+        label: Silver schema
+        hint: Validated and cleaned data.
+        default: silver
+      - id: gold_schema
+        label: Gold schema
+        hint: Modelled data for reports, ML and apps.
+        default: gold
+  - id: tables
+    title: Tables and views
+    blurb: Prefixes make table roles obvious in lineage graphs and query results.
+    fields:
+      - id: dimension_prefix
+        label: Dimension prefix
+        hint: Prefix for dimension tables.
+        default: dim_
+      - id: fact_prefix
+        label: Fact prefix
+        hint: Prefix for fact tables.
+        default: fct_
+      - id: metric_view_prefix
+        label: Metric view prefix
+        hint: Prefix for Unity Catalog metric views.
+        default: mv_
+  - id: pipelines
+    title: Jobs, pipelines and bundles
+    blurb: Operational names appear in alerts, cost reports and audit logs, so they should say what runs and where.
+    fields:
+      - id: job_pattern
+        label: Job and pipeline pattern
+        hint: Pattern for Lakeflow jobs and pipelines.
+        default: <domain>_<layer>_<purpose>_<env>
+      - id: bundle_pattern
+        label: Bundle name
+        hint: Name of the Declarative Automation Bundle that deploys them.
+        default: <domain>-<purpose>
+  - id: principals
+    title: Groups and service principals
+    blurb: Principals are granted access to data, so their names should show owner and purpose.
+    fields:
+      - id: group_pattern
+        label: Group pattern
+        hint: Pattern for account-level groups synced from the identity provider.
+        default: <domain>-<role>
+      - id: service_principal_pattern
+        label: Service principal pattern
+        hint: Pattern for service principals that run jobs.
+        default: sp-<domain>-<purpose>-<env>
+  - id: columns
+    title: Columns and keys
+    blurb: Consistent column names let people join and filter without reading documentation.
+    fields:
+      - id: column_style
+        label: Column style
+        hint: Case and separator for column names. Avoid special characters, which need quoting.
+        default: snake_case
+      - id: surrogate_key
+        label: Surrogate key
+        hint: Name of a generated key in a dimension.
+        default: <entity>_key
+      - id: natural_key
+        label: Business key
+        hint: Name of the key that comes from the source system.
+        default: <entity>_id

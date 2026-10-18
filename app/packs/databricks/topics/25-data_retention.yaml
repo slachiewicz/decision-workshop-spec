@@ -1,0 +1,88 @@
+id: data_retention
+title: Retention and archival
+situation: >-
+  Data that is kept forever costs storage and widens exposure, while data deleted too early
+  breaks audits and restatements. In Delta tables, retention has several layers: table history
+  for time travel, deleted data files that VACUUM removes, and older rows you may move to
+  cheaper storage. Decide how long data stays online and what happens afterwards.
+intake:
+  - Which datasets have a legal minimum or maximum retention period, and who owns that rule?
+  - How far back do users query, and how often do they need data older than that?
+  - Who pays for storage today, and is the bill a concern?
+recommendation_note: Keep a defined online window per dataset and archive or delete after it. Record the window in the field below.
+adr_context: >-
+  Each dataset keeps data online for a defined window. Older data is archived to cheaper
+  storage or deleted according to the dataset's rule. VACUUM and predictive optimization
+  remove unreferenced files so deleted records leave storage, and table history is not used
+  as a long-term backup.
+options:
+  - value: keep_everything
+    label: Keep everything
+    description: No data is removed on a schedule. Tables grow, and only VACUUM clears unreferenced files.
+    tradeoff: No risk of losing history, but storage grows without limit and old personal data stays.
+    pros:
+      - Full history is always available for restatements and audits
+      - No retention rules to design or review
+    cons:
+      - Storage cost grows every month with no ceiling
+      - Data that should be deleted for privacy reasons stays on the platform
+    adr_context: >-
+      All data is kept with no scheduled removal. Storage growth is accepted, and VACUUM
+      still runs on every table so unreferenced files do not accumulate.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/tables/operations/vacuum
+        title: Remove unused data files with vacuum
+  - value: windows_archive
+    label: Retention windows and archive
+    description: Each dataset has an online window. Older data is archived or deleted, and VACUUM clears removed files.
+    tradeoff: Controls cost and exposure, but rules must be set per dataset and checked regularly.
+    pros:
+      - Storage cost and exposure stay bounded
+      - Delta retention settings and VACUUM make the window enforceable
+      - Predictive optimization can run VACUUM on managed tables
+    cons:
+      - Archival support for cloud lifecycle policies is in Public Preview
+      - Queries that scan full history fail on archived files
+    adr_context: >-
+      Retention windows with archival were chosen. Each dataset has an online window, data
+      beyond it is archived or deleted, and VACUUM removes unreferenced files. The standard
+      window is recorded with this decision, and exceptions are documented per dataset.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/tables/history
+        title: Work with table history
+      - url: https://docs.databricks.com/aws/en/tables/operations/vacuum
+        title: Remove unused data files with vacuum
+      - url: https://docs.databricks.com/aws/en/optimizations/archive-delta
+        title: Archival support in Databricks
+    value_field_labels:
+      online_window:
+        label: Standard online window
+        hint: How long data stays queryable before it is archived or deleted. Datasets with their own rule override it.
+  - value: regulatory_schedule
+    label: Formal regulatory schedule
+    description: A written schedule, set by legal or compliance, states how long each data class is kept and how it is destroyed.
+    tradeoff: Defensible to auditors, but needs a records owner and per-class enforcement.
+    pros:
+      - Retention and destruction trace back to a named rule
+      - Data classes can be tagged so rules apply to groups of tables
+      - Scheduled deletes show up in audit logs
+    cons:
+      - Needs ongoing work by legal or records management
+      - Rules for deleted records and table history must be set per table
+    adr_context: >-
+      A formal retention schedule was chosen. Each data class has a retention period and
+      destruction method set by compliance, tables are tagged with their class, and jobs
+      enforce the schedule, including VACUUM so deleted records leave storage.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/tables/history
+        title: Work with table history
+      - url: https://docs.databricks.com/aws/en/database-objects/tags
+        title: Apply tags to Unity Catalog securable objects
+      - url: https://docs.databricks.com/aws/en/admin/system-tables/audit-logs
+        title: Audit log system table reference

@@ -1,0 +1,72 @@
+id: access_management
+title: Access management
+situation: >-
+  Every Unity Catalog grant goes to a principal: a user, a group or a service principal.
+  Principals live at the account level, so one set of groups works across all workspaces.
+  Whether grants go to groups synced from your identity provider or to individuals decides
+  how much access review, leaver handling and audit work you carry for years.
+intake:
+  - Which identity provider holds your groups, and do those groups match how teams really access data?
+  - How often do people change team, and who removes their access today?
+  - Does any auditor ask you to show who had access to a table on a past date?
+recommendation_note: Sync groups from your identity provider to the account and grant to groups. Avoid direct user grants where you can.
+adr_context: >-
+  Access is granted to account-level groups that are synced from the identity provider.
+  Membership changes in the identity provider flow to Databricks, so joiners, movers and
+  leavers are handled once. Direct grants to individual users are avoided.
+options:
+  - value: account_groups
+    label: Account-level groups synced from the identity provider
+    description: Groups are provisioned to the Databricks account from your identity provider, and Unity Catalog grants go to those groups.
+    tradeoff: Access follows the identity provider, but group design takes upfront effort.
+    pros:
+      - Leavers lose access when the identity provider removes them
+      - One group definition works in every workspace in the account
+      - Reviews cover groups, not thousands of user grants
+    cons:
+      - Group structure must be designed to match data domains
+      - Changes depend on the identity provider team
+    adr_context: >-
+      Account-level groups synced from the identity provider were chosen as the unit of
+      access. Unity Catalog privileges are granted to those groups at catalog or schema
+      level, and group membership is owned by the identity provider team.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/admin/users-groups/scim/
+        title: Sync users and groups from your identity provider using SCIM
+      - url: https://docs.databricks.com/aws/en/admin/users-groups/groups
+        title: Groups
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: individual_grants
+    label: Grants to individual users
+    description: Privileges are granted directly to named users, without a group layer.
+    tradeoff: Quick for a small team, but hard to review and easy to leave behind when people move.
+    pros:
+      - No group design needed to start
+      - Easy to give one person one-off access
+    cons:
+      - Reviews grow with every user, and leavers are easy to miss
+      - Every access change is repeated per person, with no single place to review it
+    adr_context: >-
+      Individual user grants were chosen for this phase because the team is small. The
+      decision is expected to move to groups before the user base grows, and grants are
+      reviewed on a fixed schedule until then.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+modifiers:
+  - id: service_principals_for_jobs
+    title: Service principals for jobs
+    label: Run production jobs as service principals
+    hint: A service principal gives jobs an identity that survives staff changes. Without it, jobs run as their owner and stop when that person leaves.
+    on_adr_context: >-
+      Production jobs and pipelines run as service principals, not as the people who created
+      them. The jobs keep working when staff change, and their access is granted to the
+      service principal and reviewed like any other principal.
+    off_adr_context: >-
+      Jobs run under the identity of their owner. Access for a job is therefore tied to a
+      person, and a job must be reassigned when its owner leaves.

@@ -1,0 +1,84 @@
+id: data_quality
+title: Data quality
+situation: >-
+  Bad data is cheapest to stop at the point where it enters a table, and cheapest to find when
+  something upstream quietly breaks. Databricks offers rules inside pipelines, monitoring on
+  tables that already exist, and room for third-party test frameworks. These approaches
+  catch different problems, so you can pick more than one.
+intake:
+  - Which tables feed regulatory or executive reports, and what happens when they are wrong?
+  - Are quality problems mostly invalid records, or late and missing loads?
+  - Does the team already use a test framework such as dbt tests or Great Expectations?
+recommendation_note: ''
+adr_context: >-
+  The data quality approaches listed in this record were chosen. Record-level rules run where
+  data is transformed, table-level monitoring watches freshness and completeness after
+  loading, and failures notify the table owner. Each Gold table has a named owner who
+  responds to failures.
+options:
+  - value: pipeline_expectations
+    label: Pipeline expectations
+    description: SQL rules declared on pipeline tables that warn on, drop or fail records, with quality metrics logged per update.
+    tradeoff: Stops bad records at the source of the transformation, but only covers tables built in Lakeflow pipelines.
+    pros:
+      - Rules live in the pipeline code and are reviewed with it
+      - Each rule can warn, drop the record or fail the update
+      - Metrics per rule are recorded for every pipeline update
+    cons:
+      - Applies only to pipeline datasets, not to tables written some other way
+      - Dropped records need a quarantine or follow-up, or they disappear silently
+    adr_context: >-
+      Pipeline expectations were chosen for record-level rules. Critical rules fail the update,
+      less critical rules drop or flag records, and rule metrics are reviewed by the table
+      owner.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/ldp/expectations
+        title: Manage data quality with pipeline expectations
+  - value: quality_monitoring
+    label: Data quality monitoring
+    description: Anomaly detection checks freshness and completeness across a schema, and data profiling tracks statistics over time.
+    tradeoff: Finds late or incomplete tables with little setup, but does not validate individual records.
+    pros:
+      - Anomaly detection monitors every table in a schema with one setting
+      - Learns each table's usual pattern from its history
+      - Data profiling tracks statistics and model inputs over time, and was formerly Lakehouse Monitoring
+    cons:
+      - Anomaly detection is in Public Preview
+      - It does not check business rules, so it complements expectations
+    adr_context: >-
+      Data quality monitoring was chosen. Anomaly detection watches Silver and Gold schemas
+      for stale or incomplete tables, data profiling covers selected key tables, and alerts
+      notify the table owners.
+    maturity: preview
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-quality-monitoring
+        title: Data quality monitoring
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-quality-monitoring/anomaly-detection
+        title: Anomaly detection
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-quality-monitoring/data-profiling
+        title: Data profiling
+  - value: third_party
+    label: Third-party testing
+    description: An external framework, such as dbt data tests, runs checks against tables after they are built.
+    tradeoff: Reuses existing skills and tests, but adds a tool and its results outside Unity Catalog.
+    pros:
+      - Teams keep test suites they already know
+      - dbt data tests run as part of the dbt build
+      - Framework-neutral if you may change platform later
+    cons:
+      - Results sit outside Databricks unless you export them
+      - Another tool to schedule, secure and keep in step with schema changes
+    adr_context: >-
+      A third-party testing framework was chosen. Tests run after each build on the SQL
+      warehouse, and failures notify the table owner. Results are stored in a table in Unity
+      Catalog for reporting.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.getdbt.com/docs/build/data-tests
+        title: Add data tests to your DAG
+      - url: https://docs.databricks.com/aws/en/integrations/
+        title: Technology partners

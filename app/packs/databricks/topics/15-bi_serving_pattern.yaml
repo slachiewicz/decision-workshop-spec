@@ -1,0 +1,86 @@
+id: bi_serving_pattern
+title: BI and serving pattern
+situation: >-
+  Reports and questions have to be served from somewhere. Databricks has its own consumption
+  layer, with AI/BI dashboards and Genie Agents running on SQL warehouses. Many organisations
+  also have Power BI or Tableau already, and those tools connect to the same warehouses. This
+  choice sets which tools report authors use and where governance is enforced.
+intake:
+  - Which BI tools do report authors and business users use today, and how many licences are in play?
+  - Do reports need features Databricks dashboards lack, such as pixel-perfect layouts or existing semantic models?
+  - Who builds reports, the data team, analysts in each domain or business users?
+recommendation_note: Most estates already own an external BI tool. Serve it from SQL warehouses and keep metrics in Unity Catalog metric views.
+adr_context: >-
+  External BI tools were chosen as the main reporting layer, connected to Databricks SQL
+  warehouses. Report authors keep their existing tools and skills. Shared metrics are defined
+  once as Unity Catalog metric views, and access is governed by Unity Catalog, so the
+  platform team does not rebuild reports in a second tool.
+options:
+  - value: native
+    label: Databricks-native (AI/BI dashboards and Genie)
+    description: Dashboards and Genie Agents run on SQL warehouses and read Unity Catalog data directly, with no separate BI product.
+    tradeoff: Fewest moving parts and one governance model, but authors must leave their current BI tool.
+    pros:
+      - One governance and audit model for data and reports
+      - Published dashboards can be shared with account users who have no workspace access
+      - Genie Agents add natural-language questions on the same data
+    cons:
+      - Visual and layout options are narrower than mature BI suites
+      - Existing report estates have to be rebuilt
+    adr_context: >-
+      Databricks-native consumption was chosen. AI/BI dashboards and Genie Agents serve all
+      reporting from SQL warehouses, so governance, lineage and audit stay in Unity Catalog and
+      no separate BI product is licensed.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dashboards/
+        title: Dashboards
+      - url: https://docs.databricks.com/aws/en/genie-agents/
+        title: Genie Agents
+  - value: external_bi
+    label: External BI over a SQL warehouse
+    description: Power BI, Tableau or a similar tool connects to a SQL warehouse. Databricks supplies governed data and metrics only.
+    tradeoff: Reuses existing BI skills and reports, but adds a second tool to license, secure and monitor.
+    pros:
+      - Authors keep the tools and semantic models they already know
+      - Metric views give external tools the same measure definitions as Databricks
+      - Single sign-on can pass the viewer's identity so Unity Catalog permissions still apply
+    cons:
+      - Report logic and security can drift into the BI tool
+      - Warehouse cost follows report traffic
+    adr_context: >-
+      External BI tools were chosen to serve reports, connected to SQL warehouses. Teams keep
+      their existing tooling, and Unity Catalog metric views carry shared measure definitions
+      into those tools.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/uc-semantics/metric-views
+        title: Unity Catalog metric views
+      - url: https://learn.microsoft.com/azure/databricks/partners/bi/power-bi/desktop
+        title: Connect Power BI Desktop to Azure Databricks
+      - url: https://docs.databricks.com/aws/en/partners/bi/tableau
+        title: Connect Tableau to Databricks
+  - value: both
+    label: Both native and external BI
+    description: Databricks dashboards and Genie serve data teams and quick questions, while an external tool serves wider report audiences.
+    tradeoff: Each audience gets a fitting tool, but two reporting stacks need support and clear rules.
+    pros:
+      - Analysts can answer ad hoc questions in Genie without a BI licence
+      - Wide audiences still use the corporate BI tool
+      - Metric views keep numbers consistent across both
+    cons:
+      - Users need guidance on which tool owns which report
+      - Two sets of reports to govern, monitor and retire
+    adr_context: >-
+      Both Databricks-native consumption and an external BI tool were chosen. Native
+      dashboards and Genie Agents serve data teams and ad hoc questions. The external tool
+      serves wider audiences. Shared metrics are defined once as Unity Catalog metric views.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dashboards/
+        title: Dashboards
+      - url: https://docs.databricks.com/aws/en/uc-semantics/metric-views
+        title: Unity Catalog metric views

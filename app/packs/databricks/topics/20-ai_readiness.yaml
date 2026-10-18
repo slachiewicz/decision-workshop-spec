@@ -1,0 +1,83 @@
+id: ai_readiness
+title: AI readiness
+situation: >-
+  Genie, agents and other AI features answer from your data and its descriptions. They work
+  better when tables and columns have comments, tags and certified metrics, and they are only
+  as safe as the grants behind them. This topic records how far you go now: nothing, the
+  foundations that make later AI work cheaper, or a first agent pilot.
+intake:
+  - Is there an AI use case with an owner and a success measure, or is this exploratory?
+  - Are Gold tables documented well enough that a new analyst could use them without asking?
+  - Which data must never be reachable by an AI feature, and is that enforced by grants and masks?
+recommendation_note: Document and certify Gold data first. It helps people today and makes any later agent more accurate.
+adr_context: >-
+  AI-ready foundations were chosen. Gold tables carry descriptions and tags, shared measures
+  are defined as metric views, and trusted assets are certified. No agent is built yet, but
+  a later pilot can start from governed, documented data.
+options:
+  - value: not_now
+    label: Not now
+    description: No AI work is planned for this phase. Documentation of data stays on the normal governance schedule.
+    tradeoff: No extra effort now, but a later AI project starts from whatever documentation exists.
+    pros:
+      - No new spend or review burden
+      - The team can focus on the core data platform
+    cons:
+      - Undocumented tables make later Genie or agent answers less reliable
+      - Business pressure for AI may arrive before the data is ready
+    adr_context: >-
+      AI work was deferred. The platform does not enable agent building in this phase, and the
+      decision is revisited when a use case has an owner and a measure of success.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/genie/
+        title: Genie
+  - value: ai_ready_foundations
+    label: AI-ready foundations
+    description: Comments, tags, metric views and certification on Gold data, so Genie and agents have context to work from.
+    tradeoff: Modest ongoing curation effort, with value for every reader whether or not AI is used.
+    pros:
+      - AI-generated comments give a starting draft for descriptions
+      - Metric views define measures once for Genie, dashboards and BI tools
+      - Certified and deprecated tags steer Genie One toward trusted assets
+    cons:
+      - Someone must review generated comments and keep them current
+      - Curation is ongoing work with no one-off finish
+    adr_context: >-
+      AI-ready foundations were chosen. Gold tables and columns carry reviewed descriptions
+      and governed tags, shared measures are metric views, and trusted assets are certified,
+      so Genie and later agents answer from curated context.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/comments/ai-comments
+        title: Add AI-generated comments to Unity Catalog objects
+      - url: https://docs.databricks.com/aws/en/uc-semantics/metric-views
+        title: Unity Catalog metric views
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/certify-deprecate-data
+        title: Flag data as certified or deprecated
+  - value: agent_pilot
+    label: Genie Agent or agent pilot
+    description: A Genie Agent for one domain, or a custom agent built with Agent Bricks and served through Model Serving.
+    tradeoff: Shows value quickly on one use case, but needs an owner, evaluation and a cost limit.
+    pros:
+      - Genie Agents need only curated data and a warehouse, with no code
+      - Agent Bricks supports custom agents, with MLflow tracing for debugging
+      - Model Serving hosts models behind a governed REST API
+    cons:
+      - Quality must be tested, and answers need review by a domain expert
+      - Usage costs apply, so set budgets before opening the pilot
+    adr_context: >-
+      An agent pilot was chosen for one domain with a named owner and measure of success. It
+      uses a Genie Agent or an agent built with Agent Bricks, runs on curated Gold data, and
+      has a budget and evaluation set before wider rollout.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/genie-agents/set-up
+        title: Create and manage a Genie Agent
+      - url: https://docs.databricks.com/aws/en/agents
+        title: Develop agents on Databricks
+      - url: https://docs.databricks.com/aws/en/machine-learning/model-serving/
+        title: Deploy models using Model Serving

@@ -1,0 +1,148 @@
+id: distribution
+title: Distribution surfaces
+situation: >-
+  Once data is modelled, people and applications need ways to reach it. Databricks offers
+  several surfaces: published dashboards, Genie Agents for natural-language questions, apps,
+  a Postgres database for application reads, driver-based access for tools and spreadsheets,
+  and embedded dashboards. Each has its own identity model and cost profile, so pick only the
+  ones you will support.
+intake:
+  - Who consumes the data, analysts, executives, partners outside the company or applications?
+  - Which people have no workspace access today, and should they get any?
+  - Do any consumers need to write data back, or serve low-latency application reads?
+  - Which tools must connect directly, for example Excel or an existing BI product?
+recommendation_note: ''
+adr_context: >-
+  The distribution surfaces listed in this record were chosen. Each is governed by Unity
+  Catalog, and the platform team supports only these surfaces. Other ways of reaching the
+  data need a documented exception.
+options:
+  - value: aibi_dashboards
+    label: AI/BI dashboards
+    description: Published dashboards with scheduled refresh and email, Slack or Microsoft Teams subscriptions.
+    tradeoff: Quick to build and share, but dashboard design is less flexible than a full BI suite.
+    pros:
+      - Account users can view a published dashboard without workspace access
+      - Scheduled refresh warms a shared cache and cuts warehouse load
+      - Subscriptions push snapshots to email, Slack or Teams
+    cons:
+      - Shared data permissions run queries as the publisher, which can expose data
+      - Authors need the Databricks SQL entitlement
+    adr_context: >-
+      Published AI/BI dashboards were chosen as a distribution surface, with scheduled
+      refresh and subscriptions. Dashboards that use shared data permissions are reviewed,
+      because viewers see data under the publisher's credentials.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dashboards/share/share
+        title: Share a dashboard
+      - url: https://docs.databricks.com/aws/en/dashboards/share/schedule-subscribe
+        title: Manage scheduled dashboard updates and subscriptions
+  - value: genie_agents
+    label: Genie Agents
+    description: Natural-language chat over curated Unity Catalog data, opened from Genie One by business users.
+    tradeoff: Lets non-technical users ask questions, but answer quality depends on curation by data analysts.
+    pros:
+      - Business users ask questions without writing SQL
+      - Data access is checked against each user's own Unity Catalog permissions
+      - Datasets, example queries and instructions are curated per domain
+    cons:
+      - An agent holds up to 50 tables, views or metric views, so domains need separate agents
+      - Needs a pro or serverless SQL warehouse and ongoing tuning
+    adr_context: >-
+      Genie Agents were chosen so business users can ask questions in natural language. Each
+      agent covers one domain and is curated by that domain's analysts. Answers respect the
+      asker's Unity Catalog permissions.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/genie-agents/
+        title: Genie Agents
+      - url: https://docs.databricks.com/aws/en/genie-agents/set-up
+        title: Create and manage a Genie Agent
+  - value: databricks_apps
+    label: Databricks Apps
+    description: Custom Streamlit, Dash, Gradio or Node.js apps hosted on the platform, using Unity Catalog and OAuth.
+    tradeoff: Full control of the user experience, but each app is software you build, secure and operate.
+    pros:
+      - Apps run inside the platform and inherit Unity Catalog governance
+      - Apps can act as their own service principal or as the signed-in user
+      - No separate hosting to run
+    cons:
+      - Billed per hour while running, and apps per workspace are limited
+      - Needs developers and a deployment process
+    adr_context: >-
+      Databricks Apps were chosen for interfaces that dashboards cannot provide, such as data
+      entry forms and operational tools. Apps are deployed through source control, and each
+      app uses its own service principal unless a requirement calls for user authorization.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/databricks-apps/
+        title: Databricks Apps
+      - url: https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth
+        title: Configure authorization in a Databricks app
+  - value: lakebase_apps
+    label: Lakebase Postgres behind apps
+    description: Lakehouse tables synced into managed Postgres so applications read them with low latency.
+    tradeoff: Serves transactional-style reads and writes, but adds a database to size, secure and monitor.
+    pros:
+      - Applications use standard Postgres drivers
+      - Unity Catalog tables can sync into Postgres for low-latency reads
+      - Autoscaling and scale to zero limit idle cost
+    cons:
+      - Another data copy, with its own freshness and access model
+      - Postgres roles are managed separately from Unity Catalog grants
+    adr_context: >-
+      Lakebase Postgres was chosen for applications that need low-latency reads or writes
+      against lakehouse data. Applications run on Databricks Apps where possible, and synced
+      tables are treated as a serving copy, not a source of record.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/oltp/projects
+        title: Lakebase Postgres
+      - url: https://docs.databricks.com/aws/en/oltp/projects/build-applications
+        title: Build applications on Lakebase
+  - value: odbc_jdbc
+    label: ODBC and JDBC drivers
+    description: Drivers connect BI tools, scripts and spreadsheets directly to a SQL warehouse. Azure also offers an Excel add-in.
+    tradeoff: Works with almost any tool, but each client needs setup, and cost follows its query habits.
+    pros:
+      - Broad tool support, including Power BI, Tableau and custom code
+      - Queries run under the connecting identity and Unity Catalog permissions
+      - Azure Databricks has an Excel add-in with scheduled refresh and write-back
+    cons:
+      - Every client needs a driver, a connection string and an authentication method
+      - Unmanaged desktop tools can send heavy queries to shared warehouses
+    adr_context: >-
+      ODBC and JDBC access to SQL warehouses was chosen for tools that cannot use another
+      surface. Connections use OAuth, and warehouses are sized for the expected tool traffic.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/integrations/jdbc-odbc-bi
+        title: Databricks ODBC and JDBC drivers
+      - url: https://learn.microsoft.com/azure/databricks/integrations/excel/
+        title: Connect to Azure Databricks from Microsoft Excel
+  - value: embedded_dashboards
+    label: Embedded dashboards
+    description: Published dashboards embedded in an external site or application, for signed-in users or external users.
+    tradeoff: Puts insights inside your own product, but needs a service principal and careful data permissions.
+    pros:
+      - Viewers can be people outside your Databricks account, using a service principal and OAuth
+      - Query history and audit logs still track activity
+      - Read and run permissions stay centrally managed
+    cons:
+      - Only published dashboards can be embedded, and admins must allow the embedding surfaces
+      - Embedding for external users does not support Ask Genie
+    adr_context: >-
+      Embedded dashboards were chosen to show analytics inside an external application. The
+      embedding application authenticates with a service principal, and the dashboards are
+      published with data permissions that were reviewed for the external audience.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dashboards/share/embedding/
+        title: Embed a dashboard

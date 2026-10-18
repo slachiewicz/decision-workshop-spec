@@ -1,0 +1,84 @@
+id: self_service
+title: Self-service posture
+situation: >-
+  Some people only read what the data team publishes. Others want to query the Gold layer
+  themselves, or bring their own data next to it. How far you open access decides how much
+  the data team answers requests, how much warehouse spend you carry, and how many unofficial
+  numbers appear. In Databricks the levers are workspace entitlements, Unity Catalog grants
+  and where people are allowed to write.
+intake:
+  - How many people can write SQL today, and how many would like to?
+  - Are data requests to the central team a bottleneck, and what do they usually ask for?
+  - Where would users keep their own tables and files if no sandbox existed?
+recommendation_note: Let trained users query Gold with SQL and Genie Agents, with read-only grants. Add sandboxes only for teams that need to write.
+adr_context: >-
+  Governed self-service was chosen. Trained users receive read access to Gold tables and
+  metric views and can query them with the SQL editor and Genie Agents. Writing is limited
+  to approved areas, so official figures come from one governed source.
+options:
+  - value: consumers_only
+    label: Consumers only
+    description: Business users view dashboards and Genie answers. Only the data team builds datasets, queries and dashboards.
+    tradeoff: Tightest control and lowest warehouse risk, but every new question waits for the data team.
+    pros:
+      - Users get view-only access with the Consumer access entitlement
+      - Few people run queries on shared warehouses
+      - One team owns every published number
+    cons:
+      - The central team becomes a request queue
+      - Users export data to spreadsheets to work around limits
+    adr_context: >-
+      A consumers-only posture was chosen. Business users read dashboards and Genie answers.
+      Only the data team creates datasets and dashboards, which keeps figures consistent while
+      the platform is new.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dashboards/share/share
+        title: Share a dashboard
+      - url: https://docs.databricks.com/aws/en/genie-agents/set-up
+        title: Create and manage a Genie Agent
+  - value: sql_self_service
+    label: SQL self-service on Gold
+    description: Trained analysts query Gold tables and metric views in the SQL editor and Genie Agents, with read-only grants.
+    tradeoff: Answers arrive faster, but needs training, query limits and attention to warehouse cost.
+    pros:
+      - Analysts answer their own questions on governed Gold data
+      - Unity Catalog grants decide who sees what
+      - Metric views keep measures the same across ad hoc queries
+    cons:
+      - Analysts need the Databricks SQL entitlement and training
+      - Ad hoc queries need a warehouse sized and capped for them
+    adr_context: >-
+      SQL self-service on Gold was chosen. Trained analysts receive read-only access to Gold
+      tables and metric views, and query them from the SQL editor and Genie Agents on a
+      dedicated warehouse.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/genie-agents/set-up
+        title: Create and manage a Genie Agent
+      - url: https://docs.databricks.com/aws/en/uc-semantics/metric-views
+        title: Unity Catalog metric views
+  - value: sandbox_catalogs
+    label: Sandbox catalogs per team
+    description: Each team gets its own catalog where it can create tables, and reads Gold with read-only grants.
+    tradeoff: Teams can combine their own data with Gold, but unowned tables and cost grow without clean-up.
+    pros:
+      - A catalog is a unit of isolation, so sandbox writes cannot touch production
+      - Teams can test models and joins before asking for a pipeline
+      - Catalog-level grants make ownership clear
+    cons:
+      - Sandbox tables become unofficial sources unless they expire
+      - Each sandbox needs an owner, a budget tag and a retention rule
+    adr_context: >-
+      A sandbox catalog per team was chosen. Teams read Gold with read-only grants and create
+      their own tables in the sandbox catalog. Sandboxes are tagged for cost, have a named
+      owner, and unused objects are removed on a schedule.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/catalogs/
+        title: What are catalogs in Databricks?
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices

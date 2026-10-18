@@ -1,0 +1,85 @@
+id: monitoring
+title: Monitoring and alerting
+situation: >-
+  Pipelines fail, tables go stale and costs drift. Databricks can notify on job events, run
+  SQL alerts against system tables, and monitor table quality. What matters is who is told,
+  how fast, and who looks at the trends. Decide whether the team reacts to complaints, gets
+  alerted and reviews on a schedule, or runs a full observability setup.
+intake:
+  - Who is on call for failed pipelines, and how do they find out today?
+  - How quickly must a stale or wrong table be noticed to avoid business impact?
+  - Do you already run a central monitoring tool that the platform should feed?
+recommendation_note: Alert on job failures and on SQL checks over system tables, and review trends on a fixed schedule. Choose the cadence below.
+adr_context: >-
+  Job failure notifications and SQL alerts on system tables were chosen, with a scheduled
+  review of runtime, cost and incidents. Notifications go to a team channel through a
+  system destination, and a named owner runs the review.
+options:
+  - value: reactive
+    label: Reactive
+    description: Nobody is alerted automatically. The team looks at runs and tables when users report a problem.
+    tradeoff: No setup effort, but failures are found by users, often late.
+    pros:
+      - No alerts to configure or tune
+      - Acceptable for early prototypes
+    cons:
+      - Users find stale or broken data before the team does
+      - Cost and failure trends go unseen
+    adr_context: >-
+      Monitoring is reactive. The team checks job runs and tables when a user raises an
+      issue, and the decision is revisited when the platform serves production reports.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/jobs/
+        title: Lakeflow Jobs
+  - value: alerts_review
+    label: Job alerts, SQL alerts and scheduled review
+    description: Job notifications, SQL alerts on system tables and a recurring review of trends.
+    tradeoff: Catches most operational problems cheaply, but depends on someone owning the review.
+    pros:
+      - Jobs notify on failure, long duration and streaming backlog
+      - SQL alerts can watch system tables for cost, failed queries and access events
+      - Notifications reach email, Slack, Microsoft Teams, PagerDuty or a webhook
+    cons:
+      - Alert thresholds need tuning, or the team learns to ignore them
+      - Each job and alert must be configured, ideally through source control
+    adr_context: >-
+      Job notifications and SQL alerts on system tables were chosen, with a scheduled review
+      at the cadence recorded in this decision. A named owner runs the review and tracks
+      follow-up actions.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/jobs/notifications
+        title: Add notifications on a job
+      - url: https://docs.databricks.com/aws/en/sql/user/alerts/
+        title: Databricks SQL alerts
+      - url: https://docs.databricks.com/aws/en/admin/system-tables/
+        title: System tables reference
+    value_field_labels:
+      review_cadence:
+        label: Review cadence
+        hint: How often the owner reviews failures, cost and data quality trends.
+  - value: full_observability
+    label: Full observability
+    description: Alerts and reviews plus data quality monitoring on tables, and logs and metrics fed to an external monitoring tool.
+    tradeoff: Best coverage and fastest diagnosis, but more tooling, cost and people to run it.
+    pros:
+      - Data quality monitoring flags stale or incomplete tables without hand-written checks
+      - One place can show platform, application and data signals
+      - Supports on-call rotations and service levels
+    cons:
+      - Anomaly detection is in Public Preview
+      - More tools to license, integrate and keep consistent
+    adr_context: >-
+      Full observability was chosen. Data quality monitoring watches Gold and Silver schemas,
+      job and SQL alerts feed the on-call rota, and telemetry goes to the central monitoring
+      tool so platform and application signals can be correlated.
+    maturity: preview
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-quality-monitoring
+        title: Data quality monitoring
+      - url: https://learn.microsoft.com/azure/databricks/dev-tools/databricks-apps/monitor
+        title: Logging and monitoring for Databricks Apps

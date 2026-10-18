@@ -1,0 +1,100 @@
+id: row_column_security
+title: Row and column security
+situation: >-
+  Some users may see a table but not every row, or not every value in a column. Unity
+  Catalog can enforce this in the table itself with row filters and column masks, centrally
+  with tag-based ABAC policies, or in a view that checks group membership. The mechanisms
+  differ in who maintains them and how many tables they cover. You can combine them.
+intake:
+  - Which datasets hold rows or columns that only some groups may see, and who decides which?
+  - How many tables share the same rule, such as every column tagged as personal data?
+  - Do consumers include tools that read tables directly, or only people reading through views?
+recommendation_note: ''
+adr_context: >-
+  The row and column security mechanisms listed in this record were chosen. Sensitive data is
+  restricted at the data layer in Unity Catalog, not in each report, so every tool that reads
+  the table sees the same restrictions.
+options:
+  - value: none
+    label: None
+    description: Access is decided at table level only. Anyone who can read a table sees all its rows and columns.
+    tradeoff: Simplest to run, but only suits data that is uniformly open to its readers.
+    pros:
+      - No filter functions or policies to write, test or maintain
+      - Queries have no filtering overhead
+    cons:
+      - Mixed-sensitivity tables must be split into separate tables
+      - Restrictions that live in reports can be bypassed by direct queries
+    adr_context: >-
+      No row or column security was applied. Access is granted per table, and tables that mix
+      sensitivity levels are split so each table has a single audience.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: row_filters_masks
+    label: Row filters and column masks
+    description: SQL functions attached to a table decide which rows a user sees and what a column value looks like.
+    tradeoff: Enforced for every reader of the table, but each table is configured and tested by hand.
+    pros:
+      - Applies to every query, whatever tool or compute runs it
+      - Functions can use group membership or a mapping table
+      - Table owners can adopt it without platform-wide policy work
+    cons:
+      - Configured per table, which does not scale to hundreds of tables
+      - Functions need testing, and a faulty one can hide rows or fail queries
+    adr_context: >-
+      Unity Catalog row filters and column masks were chosen for tables with restricted rows
+      or values. Table owners attach approved functions, and the functions use account-level
+      group membership.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/
+        title: Row filters and column masks
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/manually-apply
+        title: Manually apply row filters and column masks
+  - value: abac
+    label: ABAC policies on governed tags
+    description: Policies at catalog or schema level apply filters and masks to every object that carries a matching governed tag.
+    tradeoff: One policy covers many tables, but needs governed tags and tag discipline.
+    pros:
+      - Databricks recommends it for consistent filtering across many tables
+      - New tables are protected as soon as they are tagged
+      - Data classification can tag sensitive columns automatically
+    cons:
+      - Wrong or missing tags leave data unprotected
+      - Metastore-level policies and DENY policies are still in Beta
+    adr_context: >-
+      Attribute-based access control was chosen. Governed tags mark sensitive columns, and
+      policies at catalog or schema level apply masks and filters to them, so new tables
+      are protected when they are tagged. Policies target account-level groups.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/
+        title: Attribute-based access control in Unity Catalog
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-classification
+        title: Data Classification
+  - value: dynamic_views
+    label: Dynamic views
+    description: A view filters rows or masks columns by checking the caller's group membership, and users read the view, not the table.
+    tradeoff: Works anywhere views work and can join sources, but users must be kept off the base table.
+    pros:
+      - Can reshape or join data into a curated, secure layer
+      - Simple SQL that most engineers can read
+      - Can be shared through OpenSharing views
+    cons:
+      - Every consumer must be moved to the view, and the base table locked down
+      - Logic is repeated in each view, and can drift
+    adr_context: >-
+      Dynamic views were chosen to expose curated, restricted slices of base tables. Users are
+      granted access to the views only, and view logic uses account-level group membership.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/views/dynamic
+        title: Create a dynamic view
+rule_reasons:
+  abac_account_principals: ABAC policies name groups in their TO clause, which need to be account-level groups. Use account-level groups, or choose another mechanism.

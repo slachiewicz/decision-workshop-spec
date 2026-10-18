@@ -1,0 +1,66 @@
+id: cost_attribution
+title: Cost attribution
+situation: >-
+  Databricks bills by usage across workspaces, compute types and products. To charge teams or
+  projects you have to tie each usage record to an owner. Classic compute is attributed with
+  cluster tags. Serverless compute has no cluster to tag, so serverless usage policies add
+  tags instead, and budgets alert on spend. Decide how finely you attribute cost and who
+  receives the report.
+intake:
+  - Do finance or business units expect to be charged back for platform use, or is it a shared cost centre?
+  - How much of your usage is serverless (SQL, jobs, notebooks, apps) and how much is classic compute?
+  - Who should be alerted when a team or project passes its expected spend?
+recommendation_note: Chargeback needs tags. Tag classic compute with cluster tags, tag serverless with usage policies, and query system.billing.usage.
+adr_context: >-
+  Cost is attributed from the billable usage system table. Classic compute carries cluster
+  tags, serverless compute carries tags from serverless usage policies, and budgets alert
+  owners when spend passes their threshold. A dashboard on system.billing.usage supports
+  monthly chargeback.
+options:
+  - value: workspace_level
+    label: Workspace-level
+    description: Cost is reported per workspace. Each team or environment has its own workspace, and no tag discipline is needed.
+    tradeoff: Simple and needs no tagging, but cannot split cost inside a shared workspace.
+    pros:
+      - Billing records already carry the workspace ID
+      - No tag policy or enforcement to run
+      - Budgets can be scoped to a workspace
+    cons:
+      - Teams sharing a workspace cannot be separated
+      - Serverless and shared SQL warehouses blur ownership
+    adr_context: >-
+      Cost attribution is at workspace level. Each business unit or environment has its own
+      workspace, and the billable usage system table is grouped by workspace for reporting.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/admin/system-tables/billing
+        title: Billable usage system table reference
+      - url: https://docs.databricks.com/aws/en/admin/account-settings/budgets
+        title: Create and monitor budgets
+  - value: chargeback_system_billing
+    label: Chargeback from system.billing.usage
+    description: Usage is tagged and charged back from system.billing.usage, using cluster tags, serverless usage policies and budgets.
+    tradeoff: Fine-grained and auditable, but only as complete as the tagging behind it.
+    pros:
+      - Custom tags on compute appear in billing records
+      - Serverless usage policies add tags to serverless workloads
+      - Budgets alert teams before they overspend
+    cons:
+      - Serverless usage policies are in Public Preview
+      - Untagged usage needs a rule, or it lands in a shared bucket
+    adr_context: >-
+      Chargeback from system.billing.usage was chosen. Classic compute is tagged with cluster
+      tags, serverless workloads with serverless usage policies, and budgets provide alerts.
+      Untagged usage is reported to the platform team each month.
+    maturity: preview
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/admin/usage/system-tables
+        title: Monitor costs using system tables
+      - url: https://docs.databricks.com/aws/en/admin/account-settings/usage-detail-tags
+        title: Use tags to attribute and track usage
+      - url: https://docs.databricks.com/aws/en/admin/usage/budget-policies
+        title: Attribute usage with serverless usage policies
+      - url: https://docs.databricks.com/aws/en/admin/account-settings/budgets
+        title: Create and monitor budgets

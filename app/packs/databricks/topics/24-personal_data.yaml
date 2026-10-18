@@ -1,0 +1,80 @@
+id: personal_data
+title: Personal data handling
+situation: >-
+  Data about people raises extra duties: limiting who sees it, minimising what is kept, and
+  deleting it on request. Delta tables keep old file versions until VACUUM removes them, so a
+  delete does not erase data at once. This choice decides whether personal data travels with
+  all other data or is handled in a separate, tighter path.
+intake:
+  - Which datasets hold personal data, and which laws or contracts apply to them?
+  - Who handles deletion requests today, and how long do they have to complete them?
+  - Can analysts do their work with pseudonymised or masked values instead of the real ones?
+recommendation_note: Keep personal data in its own schema with masks, minimise what flows downstream, and set a retention rule that includes VACUUM.
+adr_context: >-
+  Personal data is isolated in dedicated schemas with column masks, and only the minimum
+  fields flow into shared Silver and Gold layers. Deletion requests are applied to the
+  source and propagated downstream, and VACUUM runs after deletes so removed records leave
+  storage. Retention rules are set per dataset.
+options:
+  - value: isolated_minimised
+    label: Isolated schema, masks and retention
+    description: Personal data sits in its own schemas with column masks, downstream layers hold only what is needed, and deletes are purged.
+    tradeoff: Strongest control and easier deletion, but pipelines need extra design and review.
+    pros:
+      - Grants to the isolated schema can be limited to a small group
+      - Masks show analysts pseudonymised values by default
+      - Data classification can find personal data that was not expected
+    cons:
+      - Pipelines must split and join personal and non-personal data
+      - Deleting records means propagating deletes, then running VACUUM or purge steps
+    adr_context: >-
+      Personal data is isolated in separate schemas. Column masks limit who sees real values,
+      downstream layers hold the minimum fields, and deletion requests are applied to the
+      source, propagated downstream and then purged with VACUUM.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/ldp/gdpr
+        title: Prepare your data for GDPR compliance
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/
+        title: Row filters and column masks
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-classification
+        title: Data Classification
+  - value: same_path
+    label: Same path as other data
+    description: Personal data flows through the normal Bronze, Silver and Gold layers, protected by ordinary grants.
+    tradeoff: Simplest pipelines, but personal data spreads and deletion has to find every copy.
+    pros:
+      - One pipeline pattern for all data
+      - Fewer schemas and grants to manage
+    cons:
+      - Personal data reaches many tables and tools, which widens exposure
+      - A deletion request must be traced through every downstream copy
+    adr_context: >-
+      Personal data follows the same path as other data. Access is controlled with ordinary
+      grants, and lineage is used to find downstream copies when a deletion request arrives.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/ldp/gdpr
+        title: Prepare your data for GDPR compliance
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage
+        title: Lineage in Unity Catalog
+  - value: out_of_scope
+    label: Out of scope
+    description: The platform holds no personal data, or personal data is handled by another system.
+    tradeoff: No extra controls, but only valid if nothing personal can reach the platform.
+    pros:
+      - No masking, classification or deletion process to run
+      - Fits platforms limited to aggregated or anonymous data
+    cons:
+      - A single table with personal data breaks the assumption
+      - Needs a control to prove nothing personal is loaded
+    adr_context: >-
+      Personal data is out of scope for this platform. Sources are limited to anonymous or
+      aggregated data, and any request to load personal data returns to this decision.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-classification
+        title: Data Classification

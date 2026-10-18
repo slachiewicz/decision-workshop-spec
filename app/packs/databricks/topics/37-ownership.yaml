@@ -1,0 +1,83 @@
+id: ownership
+title: Ownership and stewardship
+situation: >-
+  Every Unity Catalog object has an owner with full privileges on it, and owners can grant
+  access to others. Who holds ownership decides who approves access, who answers questions
+  about a table, and who is accountable when it is wrong. Ownership by a person breaks when
+  that person leaves, so owners are usually groups. Decide how ownership maps to your
+  organisation.
+intake:
+  - Who approves access to a dataset today, and do they know they are the approver?
+  - Is there a business domain or product structure that matches how teams own data?
+  - How many catalogs and schemas do you expect, and can a central team keep up with requests for all of them?
+recommendation_note: ''
+adr_context: >-
+  Ownership of Unity Catalog objects is assigned to groups, not to individuals. The option
+  recorded in this decision defines which group owns which level of the hierarchy, and
+  owners are the approvers for access requests to their objects.
+options:
+  - value: catalog_owner_groups
+    label: Catalog owners and domain owner groups
+    description: Each catalog or schema is owned by a domain group. The group approves grants and answers questions about its data.
+    tradeoff: Ownership matches the catalog layout and scales with the domains, but depends on strong domain groups.
+    pros:
+      - Owners hold all privileges on their catalog and can grant access within it
+      - A group survives staff changes, and owners are visible in Catalog Explorer
+      - Domain teams approve access to their own data
+    cons:
+      - A catalog owner can grant any access inside the catalog, so owner groups must be small and trusted
+      - Domain groups must be created and kept in step with the identity provider
+    adr_context: >-
+      Catalogs and schemas are owned by domain owner groups. Each group approves access to
+      its data, and ownership is never held by an individual. Owner groups are kept small
+      because owners can grant any privilege on their objects.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/manage-privileges
+        title: Manage privileges and ownership in Unity Catalog
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: data_products
+    label: Data products with discovery metadata
+    description: Named data products have an owner recorded in domains, governed tags and certification, shown on the Discover page.
+    tradeoff: Business-facing and easy to browse, but needs curators and agreed definitions of a product.
+    pros:
+      - Consumers browse assets by domain and see what is certified
+      - Domains group data products and assets by governed tags
+      - Owner, certification and description sit with the asset
+    cons:
+      - Curators must define and maintain domains and certified assets
+      - Domain management through the REST API is in Beta
+    adr_context: >-
+      Ownership is recorded per data product through domains, governed tags and certification.
+      Each product has a named owner group, and the Discover page presents products by domain
+      for consumers.
+    maturity: preview
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/uc-semantics/domains
+        title: Domains and subdomains
+      - url: https://docs.databricks.com/aws/en/discover/discover-page
+        title: Discover page
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/certify-deprecate-data
+        title: Flag data as certified or deprecated
+  - value: central_team
+    label: Central data team owns everything
+    description: One platform or data team owns every catalog and schema and approves all access.
+    tradeoff: Simple and consistent early on, but the team becomes the approval bottleneck as data grows.
+    pros:
+      - One group of people to ask about any dataset
+      - Consistent rules for grants and naming
+    cons:
+      - The central team lacks business context to approve access sensibly
+      - Request volume grows with every new domain
+    adr_context: >-
+      A central data team owns all catalogs and schemas and approves every access request.
+      Ownership is held by a team group, and the decision is revisited when request volume
+      or domain count grows.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/manage-privileges
+        title: Manage privileges and ownership in Unity Catalog

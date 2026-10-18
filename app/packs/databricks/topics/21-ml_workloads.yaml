@@ -1,0 +1,81 @@
+id: ml_workloads
+title: Data science and ML workloads
+situation: >-
+  Machine learning needs somewhere to track experiments, govern models, store features and
+  serve predictions. Databricks covers these in the platform with MLflow, models and feature
+  tables in Unity Catalog, and Model Serving. Some organisations already run ML in another
+  platform. You can pick more than one if workloads differ.
+intake:
+  - Are there ML or data science teams today, and which platform do they use?
+  - Which models run in production, and do they serve real-time requests or batch scores?
+  - Do models need the governed features and tables that already sit in Unity Catalog?
+recommendation_note: If the data lives in Unity Catalog, train and serve in the platform, so models inherit the same access control and lineage.
+adr_context: >-
+  Machine learning workloads were placed in the platform. Experiments are tracked in MLflow,
+  models and features are governed in Unity Catalog, and real-time inference uses Model
+  Serving. Models therefore share the access control, lineage and audit of the data they
+  learn from.
+options:
+  - value: none_yet
+    label: None yet
+    description: No ML workloads are planned. Revisit when a use case with an owner appears.
+    tradeoff: No platform work now, but a later team may pick its own tools if no standard exists.
+    pros:
+      - No ML compute, serving or review process to run
+      - Keeps scope on the core data platform
+    cons:
+      - Ad hoc ML tooling may appear outside the platform
+      - Feature and model governance rules are missing when the first team arrives
+    adr_context: >-
+      No ML workloads are in scope for this phase. The decision is revisited when a team
+      brings a use case with an owner and a delivery date.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/machine-learning/
+        title: Machine learning on Databricks
+  - value: in_platform
+    label: In-platform (MLflow, Feature Store, Model Serving)
+    description: Train with MLflow tracking, register models and feature tables in Unity Catalog, and serve with Model Serving.
+    tradeoff: One governed path from data to prediction, but ties ML operations to the platform.
+    pros:
+      - Models in Unity Catalog get access control, lineage and audit like tables
+      - Any Delta table with a primary key can be a feature table
+      - Model Serving scales endpoints up and down with demand
+    cons:
+      - Model Serving uses serverless compute, billed by usage
+      - Teams used to other tools must learn the Databricks workflow
+    adr_context: >-
+      In-platform ML was chosen. Experiments use MLflow, models are registered in Unity
+      Catalog, features are stored in Unity Catalog feature tables, and real-time inference
+      uses Model Serving. Production models are deployed through source control.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/mlflow/
+        title: MLflow on Databricks
+      - url: https://docs.databricks.com/aws/en/machine-learning/feature-store/uc/feature-tables-uc
+        title: Feature tables in Unity Catalog
+      - url: https://docs.databricks.com/aws/en/machine-learning/model-serving/
+        title: Deploy models using Model Serving
+  - value: external_platform
+    label: External ML platform
+    description: Models are trained and served outside Databricks, for example in another cloud ML service, reading data through connectors.
+    tradeoff: Keeps an existing ML stack, but data leaves the governed path and needs its own controls.
+    pros:
+      - Existing ML teams and pipelines keep working
+      - Training can use services Databricks does not offer
+    cons:
+      - Data copies sit outside Unity Catalog, so grants and lineage stop at the boundary
+      - Two platforms to secure, monitor and pay for
+    adr_context: >-
+      ML workloads stay on an external platform. Data is read from Unity Catalog through
+      supported connectors, and the owning team is responsible for access control and
+      lineage on the copies it creates.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/integrations/
+        title: Technology partners
+      - url: https://docs.databricks.com/aws/en/dev-tools/databricks-connect/
+        title: Databricks Connect

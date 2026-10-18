@@ -1,0 +1,62 @@
+id: discovery_lineage
+title: Discovery and lineage
+situation: >-
+  People need to find data, understand it and see what depends on it before they change it.
+  Unity Catalog captures lineage automatically for queries on Databricks, down to the column
+  level, and Catalog Explorer and the Discover page let people search. If you already run an
+  enterprise catalog, you can instead feed it or register its assets in Unity Catalog. This
+  choice sets where people look first.
+intake:
+  - Is there an enterprise data catalog today, and who uses it?
+  - Do you need lineage that includes systems outside Databricks, such as source applications or BI tools?
+  - How do people find data now, and what do they ask the data team that a catalog could answer?
+recommendation_note: ''
+adr_context: >-
+  Discovery and lineage were placed in the chosen tool. Owners add descriptions and tags to
+  their objects, and lineage is used to assess impact before schema changes. The decision
+  states which tool is authoritative, so people do not search two places.
+options:
+  - value: uc_lineage_explorer
+    label: Unity Catalog lineage and Catalog Explorer
+    description: Built-in lineage, Catalog Explorer search and the Discover page, with no extra tool to run.
+    tradeoff: Nothing extra to run and captured automatically, but it sees mostly what runs on Databricks.
+    pros:
+      - Lineage is captured automatically for queries on Databricks, down to the column level
+      - Lineage is queryable through system tables for impact reports
+      - External sources and tools can be added as external assets
+    cons:
+      - Lineage records only events where lineage can be inferred
+      - System tables keep a rolling year of lineage
+    adr_context: >-
+      Unity Catalog lineage and Catalog Explorer were chosen as the discovery and lineage
+      tools. Owners keep descriptions and tags current, impact analysis uses lineage before
+      schema changes, and external sources are registered as external assets.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage
+        title: Lineage in Unity Catalog
+      - url: https://docs.databricks.com/aws/en/catalog-explorer/
+        title: What is Catalog Explorer?
+      - url: https://docs.databricks.com/aws/en/discover/
+        title: Discover data
+  - value: external_catalog
+    label: External enterprise catalog
+    description: An enterprise catalog is the main search and lineage tool, fed by Databricks metadata and lineage.
+    tradeoff: One catalog across all platforms, but Databricks metadata must be synced and kept in step.
+    pros:
+      - People search one place for every platform
+      - Business glossaries and stewardship workflows may already exist
+    cons:
+      - Sync gaps leave stale or missing metadata
+      - Unity Catalog stays the source of truth for access, so two tools need aligning
+    adr_context: >-
+      An external enterprise catalog was chosen as the main discovery tool. It is fed by Unity
+      Catalog metadata and lineage, and Unity Catalog stays authoritative for access control.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/external-lineage
+        title: External lineage
+      - url: https://docs.databricks.com/aws/en/integrations/
+        title: Technology partners
