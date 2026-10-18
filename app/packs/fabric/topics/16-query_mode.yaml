@@ -49,7 +49,7 @@ options:
       - Reuses permissions already granted on the SQL analytics endpoint
     cons:
       - Falls back to DirectQuery whenever SQL row-level security or a view is involved
-      - Doesn't honour OneLake security roles
+      - OneLake security roles apply only as SQL rules, which force DirectQuery fallback
       - No composite models with Import tables
     adr_context: >-
       Direct Lake on SQL endpoint was chosen over Direct Lake on OneLake because existing access
