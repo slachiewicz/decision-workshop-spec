@@ -340,7 +340,7 @@ The engine and the five-part flow are the same for both. The packs differ in fiv
 | Compute and cost decision | Capacity SKU + surge protection; per-user Power BI licences | Serverless vs classic compute, SQL warehouse sizing, cluster policies, serverless usage policies |
 | Consumption surface | Power BI (Direct Lake, apps) | Databricks SQL, AI/BI dashboards and Genie Agents, plus Power BI/Tableau over SQL warehouses |
 | Governance plane | Entra groups, OneLake security, Purview labels | Unity Catalog grants, row filters / column masks / ABAC, system tables, lineage |
-| Deployment tooling | `fabric-cicd`, deployment pipelines | Databricks Asset Bundles, Terraform provider |
+| Deployment tooling | `fabric-cicd`, deployment pipelines | Declarative Automation Bundles (formerly Databricks Asset Bundles), Terraform provider |
 
 [CATALOG.md](CATALOG.md) lists all 29 decisions side by side, with the options and
 default for each platform, plus proposed decisions 30 to 36 that the live app does not

@@ -2,3 +2,5 @@ node_modules/
 dist/
 .wrangler/
 .vercel/
+test-results/
+playwright-report/

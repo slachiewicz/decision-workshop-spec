@@ -8,7 +8,8 @@ Decisions 30 to 36 are proposed additions that the live app does not cover.
 **Bold** marks the suggested default. Where no option is bold, there is no default because
 the answer depends on the situation. *(preview)* and *(gated)* mark options that weren't
 generally available when this was checked. Product names were checked against vendor docs
-on 2026-10-18. Before you ship a pack, check each fact again and put the URL in that option's
+on 2026-10-18; the content writers found two more renames that day (OpenSharing, Declarative
+Automation Bundles). Before you ship a pack, check each fact again and put the URL in that option's
 `sources[]`, because both vendors rename features often.
 
 ## Part 1. Architecture
@@ -17,8 +18,8 @@ on 2026-10-18. Before you ship a pack, check each fact again and put the URL in 
 |---|---|---|---|
 | 1 | Medallion layers | Raw·Serving / **Bronze·Silver·Gold** / B·S·G + Mart; modifier: central Landing zone for mirrored or linked sources | Raw·Serving / **Bronze·Silver·Gold** / B·S·G + Mart; modifier: landing volume (UC Volume) for files and Auto Loader |
 | 2 | Isolation strategy | Workspace per layer × env / Bronze+Silver shared, Gold separate / one workspace per env | **Catalog per domain × env, schema per layer** (`prod_sales.silver`) / catalog per env, schema per layer (`prod.silver`) / catalog per layer × env; modifier: workspace-catalog binding |
-| 3 | Centralisation | **Central backbone + domain marts** / fully centralised | **Central backbone + domain catalogs** / fully centralised (one catalog per env) / federated domains with Delta Sharing between them |
-| 4 | Ingestion (source mapper, multi) | Copy job (bulk, incremental, CDC), Data Factory pipelines, Mirroring, Shortcuts, Notebooks, Dataflow Gen2, Eventstream; for Dataverse and Dynamics only: Fabric Link, Synapse Link | Lakeflow Connect (managed SaaS and DB connectors), Auto Loader (files), Lakehouse Federation (query in place), Delta Sharing (inbound), notebooks or jobs (custom API), Structured Streaming / Kafka, partner ETL (Fivetran and similar) |
+| 3 | Centralisation | **Central backbone + domain marts** / fully centralised | **Central backbone + domain catalogs** / fully centralised (one catalog per env) / federated domains with OpenSharing (formerly Delta Sharing) between them |
+| 4 | Ingestion (source mapper, multi) | Copy job (bulk, incremental, CDC), Data Factory pipelines, Mirroring, Shortcuts, Notebooks, Dataflow Gen2, Eventstream; for Dataverse and Dynamics only: Fabric Link, Synapse Link | Lakeflow Connect (managed SaaS and DB connectors), Auto Loader (files), Lakehouse Federation (query in place), OpenSharing (inbound), notebooks or jobs (custom API), Structured Streaming / Kafka, partner ETL (Fivetran and similar) |
 | 5 | Storage engine | Lakehouse only / Warehouse only / Lakehouse (B/S) + Warehouse (Gold) | **Managed UC tables** / external tables on own storage / mixed (external Bronze, managed S/G) |
 | 6 | Transformation tool (multi) | Spark notebooks / T-SQL (needs Warehouse) / Dataflow Gen2 / dbt | Lakeflow pipelines (formerly DLT) / Spark notebooks + Lakeflow Jobs / SQL (materialized views, streaming tables) / dbt on SQL warehouse |
 | 7 | Transformation location | Co-located per layer / separate engineering workspace | Jobs in the same workspace as the data / separate engineering workspace, with the prod catalog writable only by service principals |
@@ -32,7 +33,7 @@ on 2026-10-18. Before you ship a pack, check each fact again and put the URL in 
 | 10 | User licensing / entitlements (multi) | Free viewers on F64+ / Power BI Pro / PPU | Workspace entitlements: Workspace access (builders) / Databricks SQL access (analysts) / Consumer access (dashboard and Genie users); plus dashboard sharing to account users without workspace access. Con of sharing: dashboards run on the publisher's embedded credentials |
 | 11 | Environments | Prod only / Dev+Prod / Dev+Test+Prod | Prod only / Dev+Prod / **Dev+Test+Prod** (as catalogs, and optionally separate workspaces) |
 | 12 | Source control | Azure DevOps / GitHub / none | GitHub / Azure DevOps / GitLab / none (Git folders) |
-| 13 | CI/CD (multi) | **Git + fabric-cicd** (needs Git) / deployment pipelines (needs ≥2 envs) / manual | **Asset Bundles for workloads + Terraform for account, workspace and UC infrastructure** / Asset Bundles only / manual |
+| 13 | CI/CD (multi) | **Git + fabric-cicd** (needs Git) / deployment pipelines (needs ≥2 envs) / manual | **Declarative Automation Bundles (formerly Asset Bundles) for workloads + Terraform for account, workspace and UC infrastructure** / bundles only / manual |
 | 14 | Disaster recovery | Built-in only (zone-redundant OneLake where the region has zones, plus Power BI BCDR) / cross-region OneLake replication + Git backup (opt-in per capacity; 30-day lock on changes; billed as BCDR storage and operations; KQL data, Activator, GraphQL, apps and other non-OneLake items need Git or rebuild) / active-active | Zone redundancy only / managed DR, active-passive *(gated; Enterprise plan, Mission Critical add-on, serverless, a workspace and metastore in each region)* / DIY active-passive (IaC redeploy + Deep Clone) / active-active |
 
 ## Part 3. Consumption
@@ -43,7 +44,7 @@ on 2026-10-18. Before you ship a pack, check each fact again and put the URL in 
 | 16 | Semantic layer / query mode (multi) | Direct Lake on OneLake (no DirectQuery fallback, composite models, honours OneLake security) / Direct Lake on SQL endpoint (falls back to DirectQuery on SQL RLS and views) / Import / DirectQuery / per model | UC metric views (usable from native and external BI) / Power BI Import from SQL warehouse / Power BI DirectQuery / per model. Adaptive default follows #15: native → metric views, external → Import, plus metric views where metrics are shared |
 | 17 | Distribution surfaces (multi) | **Org app** / workspace access / subscriptions / Excel live / mobile / embedded | AI/BI dashboards (published, scheduled) / Genie Agents / Databricks Apps / Lakebase (Postgres) behind apps / Excel and BI via ODBC/JDBC / embedded dashboards |
 | 18 | Self-service posture | Consumers only / governed self-service / creator programme | Consumers only / **SQL self-service on Gold** (SQL editor, Genie Agents) / sandbox catalogs per team |
-| 19 | Data sharing (surface) | OneLake shortcuts / SQL endpoint / OneLake direct / GraphQL API / external sharing | Delta Sharing (Databricks-to-Databricks and open) / Clean Rooms / Marketplace / SQL warehouse endpoint |
+| 19 | Data sharing (surface) | OneLake shortcuts / SQL endpoint / OneLake direct / GraphQL API / external sharing | OpenSharing, formerly Delta Sharing (Databricks-to-Databricks and open) / Clean Rooms / Marketplace / SQL warehouse endpoint |
 | 20 | AI readiness | Not now / **AI-ready foundations** / data-agent pilot (paid F2+ capacity; optional dedicated Copilot capacity) | Not now / **AI-ready foundations** (UC comments, tags, metric views) / Genie Agents or agent pilot (Agent Bricks, Model Serving) |
 | 21 | DS / ML workloads (multi) | None / in Fabric / external (Databricks, Azure ML) | None / **in-platform** (MLflow, Feature Store in Unity Catalog, Model Serving) / external |
 
@@ -111,7 +112,7 @@ workspaces, the model and report workspaces, and footer bands.
 
 The Databricks preset draws:
 
-- sources and ingestion lanes (Lakeflow Connect, Auto Loader, Federation, Sharing)
+- sources and ingestion lanes (Lakeflow Connect, Auto Loader, Federation, OpenSharing)
 - a landing volume
 - catalogs per domain and environment, with one schema per layer inside each
 - serving: a SQL warehouse, then Dashboards, Genie Agents and Apps, then external BI
