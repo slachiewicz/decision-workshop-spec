@@ -126,6 +126,12 @@ describe('buildCanvas sources and bands', () => {
     expect(m.undecided).not.toContain('sources');
   });
 
+  it('draws one source per name when several systems share a mechanism', () => {
+    const t = topic('ing', [opt('copy')], { decision_type: 'multi', canvas_element: 'sources', renderer: 'source_mapper' });
+    const m = buildCanvas(packOf([t]), sessionOf([rec(t, ['copy'], { option_notes: { copy: 'SAP ERP, Salesforce;\nWorkday ,' } })]));
+    expect(m.sources.map((s) => s.label)).toEqual(['SAP ERP', 'Salesforce', 'Workday']);
+  });
+
   it('adds shortened chips to the band of the topic cluster', () => {
     const t = topic('g', [opt('a', { label: 'A very long option label that overflows' }), opt('b', { label: 'Short' })], {
       cluster: 'access_governance',

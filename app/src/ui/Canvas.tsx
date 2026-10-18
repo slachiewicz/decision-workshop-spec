@@ -20,7 +20,7 @@ const BAND_TITLES: Record<string, string> = {
 };
 
 const SERVING_PARTS: Record<string, string[]> = {
-  default: ['Models and reports'],
+  default: ['Reports and dashboards'],
   split: ['Semantic models', 'Reports and apps'],
   shared: ['Models and reports together'],
   in_gold: ['Reports inside the Gold layer'],
@@ -105,7 +105,7 @@ export function Canvas({ model, caption }: { model: CanvasModel; caption: string
       <g key={key()}>
         <rect x={PAD} y={y} width={W - 2 * PAD} height={26} rx={4} className="cv-dash" />
         <text x={PAD + 8} y={y + 17} className="cv-m">
-          Landing zone (optional, not decided)
+          Landing area (optional, not decided)
         </text>
       </g>,
     );

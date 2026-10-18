@@ -213,8 +213,8 @@ Effects and what they do to the model:
 | `footer_badge { label_id }` | Adds `pack.canvas.badge_labels[label_id]` to the footer |
 
 Source names: the source-mapper UI stores the name of each source system in
-`option_notes[<mechanism value>]`. The canvas uses that name as the label and the option
-label as `mechanism`.
+`option_notes[<mechanism value>]`, as a comma-, semicolon- or line-separated list. The
+canvas draws one source per name, with the option label as `mechanism`.
 
 Chips: every decided topic whose cluster has a band adds its chosen labels, shortened to
 24 characters, to that band. Undecided parts of the canvas are drawn dashed and grey, and

@@ -54,8 +54,10 @@ export function buildCanvas(pack: Pack, session: Session): CanvasModel {
     if (topic.canvas_element === 'sources') {
       // Source system names live in option_notes; the option label is the mechanism.
       for (const o of chosen) {
-        const named = rec.option_notes[o.value]?.trim();
-        sources.push(named ? { label: named, mechanism: o.label } : { label: o.label });
+        // One box per named system: the field takes a comma-, semicolon- or line-separated list.
+        const names = (rec.option_notes[o.value] ?? '').split(/[,;\n]/).map((n) => n.trim()).filter(Boolean);
+        if (names.length) for (const label of names) sources.push({ label, mechanism: o.label });
+        else sources.push({ label: o.label });
       }
     }
 
