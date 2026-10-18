@@ -1,0 +1,70 @@
+id: platform_centralization
+title: Platform centralisation
+situation: >-
+  A central team can own all data and serve every consumer, or it can own a shared backbone and
+  let business domains build their own marts on top. The first keeps one set of standards and a
+  single queue of work. The second moves ownership of data products to the people who know the
+  data, and relies on shared governance to keep them consistent.
+intake:
+  - Is a single central data team a bottleneck for delivery today, or is it the only team with the skills?
+  - Do business domains have people who can own the quality of their own data products?
+  - Which standards must every domain meet, such as endorsement, documented schemas or SLAs?
+recommendation_note: A central backbone with domain marts gives domains autonomy while identity, security and lineage stay central.
+adr_context: >-
+  A central backbone with domain marts was chosen. A central team owns ingestion and the shared
+  conformed layers, and each business domain builds and owns its own marts on top. Identity,
+  security and lineage stay central, which follows the domain-oriented data mesh pattern that
+  Microsoft describes for OneLake.
+options:
+  - value: backbone_marts
+    label: Central backbone with domain marts
+    description: A central team runs ingestion and shared layers. Domains own the marts and data products built on them.
+    tradeoff: Domains move at their own pace, but they need clear standards and a named owner each.
+    pros:
+      - Removes the single central queue for domain-specific tables
+      - Accountability for data quality sits with the domain that knows the data
+      - Fabric domains let admins delegate some governance settings to each domain
+      - Consumer domains can read producers through shortcuts instead of copies
+    cons:
+      - Needs published data product standards, or domains drift apart
+      - Two kinds of teams to support, central and domain
+      - Domain owners must be named and kept current
+    adr_context: >-
+      The platform was split into a central backbone and domain marts. The central team keeps
+      ingestion, shared layers, identity and lineage, and each domain owns its marts as a data
+      product with a named owner.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/architecture-patterns
+        title: Microsoft OneLake patterns and foundational capabilities
+      - url: https://learn.microsoft.com/fabric/governance/domains
+        title: Fabric domains
+  - value: fully_centralized
+    label: Fully centralised
+    description: One central team builds and owns every layer and every data product for all domains.
+    tradeoff: One standard and one owner, but every request queues behind the same team.
+    pros:
+      - One team, one set of conventions, one place to look when something breaks
+      - Simplest governance, with no delegated domain settings to monitor
+      - Suits a small organisation with a single analytics team
+    cons:
+      - The central team becomes the bottleneck as domains and requests grow
+      - Domain knowledge sits outside the team that builds the models
+      - Release cadence is the same for every domain
+    adr_context: >-
+      A fully centralised model was chosen. One central team owns all layers and data products
+      because the organisation is small, domains don't have analytics staff, and a single set of
+      conventions matters more than delivery speed. The decision should be revisited when the
+      central queue becomes a bottleneck.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/architecture-patterns
+        title: Microsoft OneLake patterns and foundational capabilities
+      - url: https://learn.microsoft.com/azure/cloud-adoption-framework/data/architecture-fabric-data-lake-unify-data-platform
+        title: Fabric architecture for a unified data platform
+value_field_labels:
+  platform_owner:
+    label: Platform owner
+    hint: The team or role that owns the central backbone and its standards.

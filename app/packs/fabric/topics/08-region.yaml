@@ -1,0 +1,68 @@
+id: region
+title: Region and data residency
+situation: >-
+  Each Fabric capacity runs in one Azure region, and that region decides where compute and
+  OneLake data for its workspaces are stored. Your tenant also has a home region. Capacities in
+  other regions use Multi-Geo, and some metadata stays in the home region. Region choice affects
+  residency, latency and which Fabric features you can use.
+intake:
+  - Which laws or contracts decide where your data may be stored and processed?
+  - Where are your users and your biggest sources, and how sensitive are you to latency?
+  - Does your tenant home region offer every Fabric workload you plan to use?
+recommendation_note: Start with one primary region that meets residency rules, and add regions only for a stated requirement.
+adr_context: >-
+  A single primary region was chosen. Capacities and their OneLake data sit in one Azure region
+  that satisfies the residency requirements. Further regions are added through Multi-Geo only
+  when a specific legal or latency reason is stated, because each added region brings its own
+  capacities, disaster recovery plan and cost.
+options:
+  - value: primary_region
+    label: Single primary region
+    description: All capacities run in one Azure region that is chosen for residency and workload availability.
+    tradeoff: Simple to run and govern, but users far from the region see higher latency.
+    pros:
+      - One set of capacities, one DR plan and one cost view
+      - Data stays in a region you can name in a compliance statement
+      - No Multi-Geo setup to maintain
+    cons:
+      - Users and sources in other geographies see higher latency
+      - Some tenant metadata stays in the home region if you choose another region
+      - A regional outage affects every workspace unless DR is enabled
+    adr_context: >-
+      A single primary Azure region was chosen for all capacities. It meets the residency
+      requirement and offers every Fabric workload the platform uses, and it keeps administration
+      and disaster recovery to one region.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/admin/region-availability
+        title: Fabric region availability
+      - url: https://learn.microsoft.com/fabric/admin/service-admin-premium-multi-geo
+        title: Configure Multi-Geo support for Fabric
+    value_field_labels:
+      azure_region:
+        label: Azure region
+        hint: The region where capacities will be created. Pick one where all Fabric workloads are available.
+  - value: multi_region
+    label: Multiple regions
+    description: Capacities in more than one region, using Multi-Geo, to meet residency rules or to sit near users.
+    tradeoff: Meets cross-border residency and latency needs, with more capacities and more to govern.
+    pros:
+      - Data for each geography can be stored in that geography
+      - Capacities near users and sources cut latency
+      - Gives a base for active-passive or active-active regional designs
+    cons:
+      - More capacities to size, pay for and monitor
+      - Workspaces with non-Power BI items can't be moved between regions
+      - Some tenant metadata always stays in the home region
+    adr_context: >-
+      Multiple regions were chosen. Residency or latency requirements mean data must be stored
+      in more than one geography, so capacities are created in each required region using
+      Multi-Geo, and workspaces are assigned to the matching capacity.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/admin/service-admin-premium-multi-geo
+        title: Configure Multi-Geo support for Fabric
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns
+        title: Choose a Microsoft Fabric deployment pattern

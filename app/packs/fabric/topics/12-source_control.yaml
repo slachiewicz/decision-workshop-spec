@@ -1,0 +1,89 @@
+id: source_control
+title: Source control
+situation: >-
+  Fabric Git integration connects a workspace to a branch in Azure DevOps, GitHub or GitHub
+  Enterprise, and saves item definitions as files. It gives you history, review and rollback for
+  supported items. Without it, the workspace is the only copy of your logic. The Git provider
+  also decides how you authenticate and where pipelines run.
+intake:
+  - Which Git platform does your organisation already use and support?
+  - Do you need service principal access to Git for automation, or is user sign-in enough?
+  - Is any of your code in a self-hosted Git server? Fabric supports cloud-hosted providers only.
+recommendation_note: ''
+adr_context: >-
+  The Git provider was chosen from the providers Fabric Git integration supports: Azure
+  DevOps, GitHub and GitHub Enterprise in their cloud-hosted forms. Workspace items are
+  versioned in that repository, which gives the team history, review and the option to roll back
+  or rebuild a workspace.
+options:
+  - value: ado
+    label: Azure DevOps
+    description: Connect workspaces to Azure Repos, signing in with a Microsoft Entra user or a service principal.
+    tradeoff: Closest to Fabric's sign-in model, but it requires an Azure DevOps organisation.
+    pros:
+      - Connects with the signed-in Entra user, or with a service principal for automation
+      - Azure Pipelines can run fabric-cicd deployments from the same repository
+      - Environments and approvals are available for release gates
+    cons:
+      - Only cloud-based Azure DevOps is supported
+      - Needs an Azure DevOps organisation and project if you don't have one
+      - Each user needs repository permissions as well as workspace roles
+    adr_context: >-
+      Azure DevOps was chosen as the Git provider. The organisation already uses Azure Repos and
+      Azure Pipelines, and Fabric connects with Microsoft Entra identities, including a service
+      principal for automation.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/cicd/git-integration/intro-to-git-integration
+        title: What is Microsoft Fabric Git integration?
+      - url: https://learn.microsoft.com/fabric/cicd/git-integration/automate-git-integration-with-service-principal
+        title: Automate git integration with a service principal in Azure DevOps
+  - value: github
+    label: GitHub
+    description: Connect workspaces to GitHub or GitHub Enterprise cloud repositories using a personal access token.
+    tradeoff: Fits GitHub-centred teams and Actions, but access runs through tokens you must manage.
+    pros:
+      - Supports GitHub and GitHub Enterprise in the cloud
+      - GitHub Actions can run fabric-cicd with environment approvals
+      - Reuses the review and branching rules already in place
+    cons:
+      - The connection uses a personal access token that must be rotated
+      - Only cloud-based GitHub is supported
+      - A tenant setting must allow syncing with GitHub repositories
+    adr_context: >-
+      GitHub was chosen as the Git provider. The engineering teams already work in GitHub, and
+      the Fabric connection uses a managed token, with GitHub Actions running the deployment
+      workflows.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/cicd/git-integration/intro-to-git-integration
+        title: What is Microsoft Fabric Git integration?
+      - url: https://learn.microsoft.com/fabric/cicd/git-integration/git-get-started
+        title: Get started with Git integration
+      - url: https://learn.microsoft.com/fabric/fundamentals/understand-best-practices-fabric-cicd
+        title: Fabric CI/CD concepts and best practices
+  - value: none
+    label: No source control
+    description: Items are edited in the workspace only. There's no Git connection.
+    tradeoff: Nothing to set up, but there is no history, no review and no rebuild from code.
+    pros:
+      - No repository, tokens or sync to manage
+      - Fine for a short-lived proof of concept
+      - Lowest barrier for analyst-built content
+    cons:
+      - No version history or code review for items
+      - Deleted items can only be recovered during the item-recovery window, which is days
+      - Git-based CI/CD and fabric-cicd can't be used
+    adr_context: >-
+      No source control was chosen for now. The platform is a proof of concept or contains only
+      analyst-built content, and the team accepts that items have no version history beyond
+      Fabric's item recovery. The decision should be revisited before production.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/admin/retention-recovery
+        title: Retention and recovery in Fabric
+      - url: https://learn.microsoft.com/fabric/cicd/git-integration/intro-to-git-integration
+        title: What is Microsoft Fabric Git integration?

@@ -1,0 +1,96 @@
+id: disaster_recovery
+title: Disaster recovery
+situation: >-
+  Disaster recovery covers the loss of a whole Azure region. It isn't the same as undoing a bad
+  change, which is backup and restore. Fabric always protects OneLake data inside a region.
+  Cross-region replication is an opt-in per capacity, and it covers OneLake data only. Items and
+  data that live outside OneLake need Git, redeployment or your own copies.
+intake:
+  - How long can analytics be unavailable after a regional outage, and how much data can you lose?
+  - Which items hold state outside OneLake, such as KQL databases, Activator, GraphQL or apps?
+  - Does your primary region have an Azure paired region where Fabric runs?
+recommendation_note: ''
+adr_context: >-
+  The disaster recovery posture was chosen against Microsoft's shared responsibility model for
+  Fabric. Microsoft keeps the platform running and replicates OneLake data when the capacity
+  setting is on, and the team is responsible for the items, configuration and non-OneLake data
+  needed to resume service in another region.
+options:
+  - value: builtin_only
+    label: Built-in resilience only
+    description: Rely on zone-redundant OneLake storage where the region has zones, plus Power BI business continuity.
+    tradeoff: No extra cost or work, but a region-wide loss means waiting for Microsoft to restore the region.
+    pros:
+      - OneLake uses zone-redundant storage in regions with availability zones, and locally redundant storage elsewhere
+      - Power BI business continuity is always on, whether or not the OneLake setting is enabled
+      - Nothing extra to pay for, configure or test
+    cons:
+      - Data stays in one region, so a region-wide disaster can make it unavailable
+      - Sweden Central doesn't get Power BI continuity by default, because its pair has no Power BI
+      - No tested plan for resuming service elsewhere
+    adr_context: >-
+      Built-in resilience only was chosen. Zone-redundant OneLake storage and Power BI business
+      continuity meet the stated recovery needs, and the business accepts waiting for the
+      region to be restored after a regional disaster.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-overview
+        title: What is OneLake?
+      - url: https://learn.microsoft.com/fabric/security/reliability-fabric
+        title: Reliability in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/admin/region-availability
+        title: Fabric region availability
+  - value: cross_region_replication
+    label: Cross-region replication and Git backup
+    description: Turn on disaster recovery for the capacity to replicate OneLake data to the paired region, and keep item definitions in Git.
+    tradeoff: Data survives a regional loss, but you pay for it and must rebuild anything outside OneLake.
+    pros:
+      - OneLake data in lakehouses and warehouses is replicated to the Azure paired region
+      - After failover, files stay readable through OneLake APIs and the global endpoint
+      - Git holds item definitions, so workspaces can be redeployed in another region
+    cons:
+      - Billed as BCDR storage and BCDR operations
+      - Once you change the setting, it's locked for 30 days
+      - KQL data, Activator, GraphQL, apps and other non-OneLake items need Git or a rebuild
+      - Replication is asynchronous, so recent writes can be lost, and it needs a paired region where Fabric runs
+    adr_context: >-
+      Cross-region replication of OneLake data was enabled on the capacity, with item
+      definitions kept in Git. Data in lakehouses and warehouses is replicated to the paired
+      region, and items that store data outside OneLake are rebuilt from source control or
+      reloaded. The replication cost and the 30-day lock on changing the setting are accepted.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/security/reliability-fabric
+        title: Reliability in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-disaster-recovery
+        title: Disaster recovery and data protection for OneLake
+      - url: https://learn.microsoft.com/fabric/security/experience-specific-guidance
+        title: Experience-specific disaster recovery guidance
+  - value: active_active
+    label: Active-active across regions
+    description: Run two deployments in two regions, load data into both and route users to whichever is healthy.
+    tradeoff: Fastest recovery, but you pay for and operate two full platforms.
+    pros:
+      - Resumes service without waiting for failover or a rebuild
+      - Works for items that OneLake replication doesn't cover
+      - Capacities in different regions give natural regional isolation
+    cons:
+      - Roughly doubles capacity, storage and operations cost
+      - Deployments and ingestion must run against both sites to keep them in sync
+      - The two copies can diverge, so you need checks to compare them
+    adr_context: >-
+      An active-active design across two regions was chosen. Business requirements allow almost
+      no downtime, so two identical deployments are kept in sync by running releases and
+      ingestion against both, and the cost of running both is accepted.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/disaster-recovery/dr-for-azure-data-platform-architecture
+        title: Disaster recovery architecture for an Azure data platform
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns
+        title: Choose a Microsoft Fabric deployment pattern
+rule_reasons:
+  dr_needs_git: Items outside OneLake can only be rebuilt in another region from source control. Choose Azure DevOps or GitHub in the source control decision.
+  needs_multi_region: Active-active needs capacities in at least two regions. Choose Multiple regions in the region decision.

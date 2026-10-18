@@ -1,0 +1,66 @@
+id: platform_topology
+title: Tenant and domain topology
+situation: >-
+  Fabric runs inside one Microsoft Entra tenant. Inside it, you can group workspaces into
+  domains, with subdomains and delegated governance, or leave them as a flat list. Domains make
+  data easier to find and let each business area own some of its own settings. A flat list is
+  simpler, but it gets hard to govern as the workspace count grows.
+intake:
+  - How many workspaces do you expect in a year, and who will own each one?
+  - Which governance settings could each business area manage for itself?
+  - Do consumers search the OneLake catalog by business area?
+recommendation_note: ''
+adr_context: >-
+  The tenant topology was chosen against Microsoft's guidance that every workspace should map
+  to a data domain and a named owner. The decision sets whether workspaces are grouped into
+  Fabric domains with delegated governance, or kept as a flat set managed centrally.
+options:
+  - value: domains_mapped
+    label: Workspaces mapped to Fabric domains
+    description: Workspaces are grouped into domains and subdomains that follow business areas, with a central domain for shared items.
+    tradeoff: Better discovery and delegated governance, but domains need planning and owners.
+    pros:
+      - Consumers can filter and find content by domain in the OneLake catalog
+      - Some tenant-level governance can be delegated to domain admins
+      - Matches the domain-oriented data mesh pattern Microsoft describes
+      - Workspaces can be assigned by name, owner or capacity
+    cons:
+      - Domains and subdomains must be designed before workspaces are assigned
+      - Each domain needs a named admin who keeps assignments current
+      - Workspace assignments need upkeep as the organisation changes
+    adr_context: >-
+      Workspaces were mapped to Fabric domains, with a separate central domain for shared
+      infrastructure. Each domain has a named admin, and governance settings that suit it are
+      delegated, which keeps ownership clear as the workspace count grows.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/governance/domains
+        title: Fabric domains
+      - url: https://learn.microsoft.com/fabric/governance/domains-best-practices
+        title: Best practices for planning and creating domains in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/onelake/architecture-patterns
+        title: Microsoft OneLake patterns and foundational capabilities
+  - value: flat_workspaces
+    label: Flat set of workspaces
+    description: Workspaces sit directly in the tenant with naming conventions and tags, and no domain structure.
+    tradeoff: Nothing to design up front, but discovery and ownership rely on naming discipline.
+    pros:
+      - No domain structure to plan or maintain
+      - Fine for a small tenant with one central team
+      - Tags and naming conventions can still add some structure
+    cons:
+      - No delegation of governance settings to business areas
+      - Ownership is easy to lose as workspaces multiply
+      - Content can't be filtered by domain in the OneLake catalog
+    adr_context: >-
+      A flat workspace structure was chosen. The tenant is small, one team owns it, and naming
+      conventions and tags give enough structure for now. Domains are revisited when the number
+      of workspaces or owners grows.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/governance/get-started-with-fabric-governance
+        title: Get started with Fabric governance
+      - url: https://learn.microsoft.com/azure/cloud-adoption-framework/data/governance-security-baselines-fabric-data-lake-unify-data-platform
+        title: Fabric governance and security baselines

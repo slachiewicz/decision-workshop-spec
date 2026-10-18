@@ -1,0 +1,111 @@
+id: transform_tool
+title: Transformation tools
+situation: >-
+  Fabric can transform data with Spark code, T-SQL in a warehouse, low-code Power Query, or dbt
+  models. Most platforms use more than one, split by layer or by team. Each choice brings its
+  own skills, review process and capacity profile. T-SQL needs a warehouse to run in.
+intake:
+  - Which languages does your engineering team already use, such as PySpark, T-SQL or SQL with dbt?
+  - Do analysts need to build their own transformations without writing code?
+  - Do you already have a dbt project that you want to keep?
+recommendation_note: ''
+adr_context: >-
+  The transformation tools were chosen to match the skills of the teams that own each layer.
+  Microsoft documents notebooks, T-SQL, Dataflow Gen2 and dbt jobs as options, and each
+  selected tool has a defined role so that transformation logic isn't spread across tools
+  without reason.
+options:
+  - value: spark_notebooks
+    label: Spark notebooks
+    description: PySpark, Spark SQL or Scala notebooks that read and write Delta tables in lakehouses.
+    tradeoff: Most flexible and scalable, but needs engineers who write and test code.
+    pros:
+      - Handles large volumes and complex logic
+      - Notebooks live in Git and deploy through pipelines
+      - Same Delta tables are readable by every other Fabric engine
+    cons:
+      - Needs Spark skills and a testing habit that notebooks don't enforce
+      - Session start-up and capacity use add cost for small jobs
+      - Harder for SQL-only analysts to read and review
+    adr_context: >-
+      Spark notebooks were chosen for the main transformation layers. The engineering team works
+      in PySpark and needs code-level control over large Delta tables.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/prepare-transform-data
+        title: Prepare and transform data in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-medallion-lakehouse-architecture
+        title: Understand medallion architecture for Fabric with OneLake
+  - value: tsql_warehouse
+    label: T-SQL in a warehouse
+    description: SQL scripts and stored procedures that transform data inside a Fabric warehouse.
+    tradeoff: Natural for SQL teams, but it only runs where there is a warehouse.
+    pros:
+      - Reuses existing T-SQL skills and much existing T-SQL code
+      - Supports transactions across tables
+      - Can read lakehouse tables in the same workspace with three-part names
+    cons:
+      - Requires a warehouse in the storage design
+      - Reaching lakehouses in another workspace needs shortcuts
+      - Less suited to unstructured or file-based transformations
+    adr_context: >-
+      T-SQL in a warehouse was chosen for the Silver and Gold transformations. The team writes
+      SQL, and the warehouse provides transactions and dimensional modelling.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/decision-guide-data-store
+        title: Microsoft Fabric decision guide - Choose a data store
+      - url: https://learn.microsoft.com/fabric/data-factory/common-dbt-job-patterns
+        title: Common dbt job patterns in Microsoft Fabric
+  - value: dataflow_gen2
+    label: Dataflow Gen2
+    description: Visual Power Query transformations that write to lakehouse or warehouse tables.
+    tradeoff: Lets analysts transform data without code, but it is costly and hard to review at scale.
+    pros:
+      - Analysts and BI developers can prepare data on their own
+      - More than 300 built-in transformations in a familiar interface
+      - Runs standalone or as a pipeline activity
+    cons:
+      - Capacity use grows with query time and staging on large data
+      - Visual steps are harder to diff and review than code
+      - Better for small and medium data than for heavy Silver processing
+    adr_context: >-
+      Dataflow Gen2 was chosen for analyst-owned transformations on small and medium data. It
+      keeps simple preparation work out of the engineering backlog, and its output lands in
+      governed lakehouse or warehouse tables.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-factory/dataflows-gen2-overview
+        title: What is Dataflow Gen2?
+      - url: https://learn.microsoft.com/fabric/fundamentals/prepare-transform-data
+        title: Prepare and transform data in Microsoft Fabric
+  - value: dbt
+    label: dbt
+    description: SQL models, tests and dependencies in a dbt project, run as a dbt job or from an Airflow job.
+    tradeoff: Brings code review, tests and lineage to SQL, but the Fabric dbt job is still in preview.
+    pros:
+      - Models, tests and dependencies are versioned in Git
+      - Runs against a Fabric warehouse from a dbt job, with run and lineage views
+      - A project can move between warehouse adapters with a profile change
+    cons:
+      - The dbt job item is in preview
+      - The dbt job targets a warehouse, so a lakehouse-only design needs another route
+      - Adds dbt skills and a project structure to the team
+    adr_context: >-
+      dbt was chosen for SQL transformations that need tests, dependency management and code
+      review. The team accepts that the dbt job item is in preview, and can run dbt from an
+      Airflow job if it needs a generally available route.
+    maturity: preview
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-factory/dbt-job-overview
+        title: dbt job in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/data-warehouse/tutorial-setup-dbt
+        title: Tutorial - Set up dbt for Fabric Data Warehouse
+      - url: https://learn.microsoft.com/fabric/data-factory/apache-airflow-jobs-dbt-fabric
+        title: Transform data using dbt
+rule_reasons:
+  needs_warehouse: T-SQL transformations run in a Fabric warehouse. Choose Warehouse only, or Lakehouse plus Warehouse, in the storage engine decision.

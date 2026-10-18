@@ -1,0 +1,89 @@
+id: access_licensing
+title: Who gets access to what, and what it costs
+situation: >-
+  Power BI content on Fabric can be read by free users only when the workspace sits on an F64 or
+  larger capacity. On smaller F SKUs every viewer needs a Pro or Premium Per User (PPU) license.
+  Authors and sharers need Pro or PPU in any case. PPU doesn't create a Fabric capacity, so it
+  can't run lakehouses, warehouses or notebooks. You can mix license types for different groups.
+intake:
+  - How many people only read reports, and how many create or share content?
+  - Will the capacity that serves reports be F64 or larger?
+  - Do you already hold Pro or PPU licenses for part of the organisation?
+recommendation_note: ''
+adr_context: >-
+  The license model was chosen from Microsoft's Fabric licensing rules: free users can view
+  Power BI content on F64 or larger capacities, while smaller SKUs and content creation need
+  Pro or Premium Per User. The selected licenses cover the groups of readers, authors and
+  engineers who need access.
+options:
+  - value: free_viewers_f64
+    label: Free viewers on F64 or larger
+    description: Readers use a free Fabric license with a Viewer role on workspaces hosted on an F64 or larger capacity.
+    tradeoff: No per-reader license cost, but authors still need Pro or PPU and the capacity must be F64 or larger.
+    pros:
+      - Report consumers need no paid per-user license
+      - Scales to large reader groups without per-seat cost
+      - Free users can also create non-Power BI Fabric items on an F capacity
+    cons:
+      - Capacity must be at least F64, which sets a higher baseline cost
+      - Viewers must hold the Viewer role. Any other role needs Pro or PPU
+      - Content creators and sharers still need Pro or PPU
+    adr_context: >-
+      Free viewers on an F64 or larger capacity were chosen. Most users only read reports, so
+      per-user licensing is avoided for them, and the cost of the larger capacity is accepted.
+      Authors keep Pro or PPU licenses.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/enterprise/licenses
+        title: Understand Microsoft Fabric licenses and capacity
+      - url: https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-subscriptions-licenses-trials
+        title: Power BI implementation planning - Subscriptions, licenses, and trials
+  - value: pro_per_user
+    label: Power BI Pro per user
+    description: Each author and each reader on a smaller capacity holds a Power BI Pro license.
+    tradeoff: Works on any F SKU and for sharing, but cost grows with every user.
+    pros:
+      - Needed to create and share Power BI content in workspaces other than My workspace
+      - Lets readers view content on F SKUs smaller than F64
+      - Pro users can share with free users when content sits on F64 or larger
+    cons:
+      - Cost rises with headcount
+      - Licenses must be assigned and tracked per user
+      - On a small capacity every viewer needs a license
+    adr_context: >-
+      Power BI Pro licenses were chosen for authors, and for readers on capacities smaller than
+      F64. The user count is small enough that per-user licensing costs less than moving to a
+      larger capacity.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/fundamentals/service-features-license-type
+        title: Power BI service features by license type
+      - url: https://learn.microsoft.com/fabric/enterprise/licenses
+        title: Understand Microsoft Fabric licenses and capacity
+  - value: ppu
+    label: Power BI Premium Per User
+    description: Users hold a PPU license for most Power BI Premium features without a capacity for Power BI content.
+    tradeoff: Cost-effective for small groups, but it adds no Fabric compute and limits who can see the content.
+    pros:
+      - Gives access to most Premium Power BI features per user
+      - Cost-effective when fewer than about 250 users need those features
+      - Needs no capacity for Power BI-only content
+    cons:
+      - Doesn't provision a Fabric capacity, so lakehouses, warehouses and notebooks need an F capacity anyway
+      - Content in a PPU workspace can only be shared with other PPU users
+      - Every viewer of PPU workspace content needs a PPU license
+    adr_context: >-
+      Premium Per User was chosen for a small group that needs Premium Power BI features. The
+      team understands that PPU doesn't provide Fabric compute, so engineering items run on a
+      separate F capacity.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/enterprise/licenses
+        title: Understand Microsoft Fabric licenses and capacity
+      - url: https://learn.microsoft.com/power-bi/fundamentals/service-features-license-type
+        title: Power BI service features by license type
+rule_reasons:
+  front_end_sku: With a back-end and front-end split, the capacity that serves reports must be F64 or larger for free viewers to read Power BI content.

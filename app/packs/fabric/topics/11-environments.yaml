@@ -1,0 +1,87 @@
+id: environments
+title: Environments
+situation: >-
+  Environments are separate sets of workspaces, usually one set per stage. They let you build
+  and test changes away from the data people rely on. Deployment pipelines and most Git branching
+  strategies need separate workspaces per stage. Every extra environment multiplies the number of
+  workspaces, and perhaps capacities, that you run.
+intake:
+  - How costly is a bad change to production data or reports, and how often do you release?
+  - Do you need a production-like test stage with realistic data volumes and capacity?
+  - Who will keep dev and test data current, and how much of it may leave production?
+recommendation_note: ''
+adr_context: >-
+  The number of environments was chosen against Microsoft's deployment patterns, which show
+  that without separate workspaces there is no pre-production separation and no deployment
+  pipelines. The selected stages set how changes are built, validated and promoted before
+  they reach users.
+options:
+  - value: single_env
+    label: Production only
+    description: One environment. Development and testing happen directly in the production workspaces.
+    tradeoff: Least to run, but every change is made where users read the data.
+    pros:
+      - Fewest workspaces and capacities to pay for and administer
+      - No promotion process to build or maintain
+      - Workable for a pilot or a very small team
+    cons:
+      - Development and testing share the production workspace, so errors reach users
+      - Deployment pipelines can't be used, because they need separate workspaces
+      - No place to test with production-like load
+    adr_context: >-
+      A production-only setup was chosen. The platform is small or at pilot stage, and the team
+      accepts that development and testing happen in the production workspaces and that
+      deployment pipelines aren't available. Environments are added when the platform grows.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns
+        title: Choose a Microsoft Fabric deployment pattern
+      - url: https://learn.microsoft.com/azure/well-architected/microsoft-fabric/cost-optimization
+        title: Cost considerations for Microsoft Fabric workloads
+  - value: dev_prod
+    label: Development and production
+    description: Two environments. Build and check changes in development, then promote to production.
+    tradeoff: Separates building from running, but there's no stage for production-like validation.
+    pros:
+      - Changes are built and checked away from production data
+      - Works with deployment pipelines and Git branching
+      - Development capacity can be small, and can be paused when idle
+    cons:
+      - Testing and acceptance share one stage
+      - Development data can drift from production
+      - A shared capacity gives no performance isolation between the two
+    adr_context: >-
+      Development and production environments were chosen. Changes are built and checked in
+      development and promoted to production, which keeps unfinished work away from users
+      without the cost of a third environment.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/cicd/deployment-pipelines/intro-to-deployment-pipelines
+        title: Introduction to deployment pipelines
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns
+        title: Choose a Microsoft Fabric deployment pattern
+  - value: dev_test_prod
+    label: Development, test and production
+    description: Three environments, the default shape of a Fabric deployment pipeline.
+    tradeoff: A dedicated test stage catches problems early, at the price of a third set of workspaces.
+    pros:
+      - Test stage can use larger data volumes and be checked by reviewers
+      - Matches the default three-stage deployment pipeline
+      - With a separate test capacity, you can check production-like performance
+    cons:
+      - Three sets of workspaces, and possibly three capacities
+      - More promotion steps and more data to keep current
+      - Test on a shared capacity gives functional checks only, not performance checks
+    adr_context: >-
+      Development, test and production environments were chosen. A dedicated test stage lets
+      reviewers and larger data volumes validate changes before production, and the three
+      stages match the default Fabric deployment pipeline.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/cicd/deployment-pipelines/intro-to-deployment-pipelines
+        title: Introduction to deployment pipelines
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns
+        title: Choose a Microsoft Fabric deployment pattern

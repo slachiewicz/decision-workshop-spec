@@ -1,0 +1,121 @@
+id: compute_strategy
+title: Capacity strategy
+situation: >-
+  All Fabric compute is billed against capacity units on an F SKU. One shared capacity pools
+  the load and is the cheapest to run, but a heavy job can slow everyone else. Splitting
+  capacities isolates workloads and attributes cost, and each extra capacity is another bill and
+  another thing to size. Surge protection limits the damage a spike can do on a shared capacity.
+intake:
+  - Do any workloads have to finish within a fixed time, whatever else is running?
+  - Do you need to charge compute back to departments or business units?
+  - How spiky is background load such as refreshes, Spark jobs and pipeline runs?
+  - Which environments exist, and can non-production capacities be paused when idle?
+recommendation_note: Begin with one shared capacity and surge protection, then split only when measured load or chargeback requires it.
+adr_context: >-
+  A single shared capacity with surge protection was chosen. All workloads draw on one pool,
+  which uses capacity efficiently, and surge protection rejects background work before the
+  capacity reaches deep throttling. The capacity is monitored with the Fabric Capacity Metrics
+  app, and it is split only if measured contention or chargeback needs justify a second one.
+options:
+  - value: single_surge
+    label: Single capacity with surge protection
+    description: One F SKU capacity for all workloads, with surge protection set to cap background load.
+    tradeoff: Cheapest and simplest, but teams share throttling and one noisy job can affect others.
+    pros:
+      - Pooled capacity keeps utilisation high and idle cost low
+      - Capacity-level surge protection rejects background work before deep throttling
+      - One capacity to size, monitor and pay for
+      - Workspace-level limits (preview) can cap a single noisy workspace
+    cons:
+      - A heavy workload can slow unrelated teams
+      - Surge protection rejects background jobs, which can delay refreshes
+      - No isolation for workloads with strict time limits
+    adr_context: >-
+      One shared capacity with surge protection was chosen. The workloads fit a single pool,
+      and surge protection limits the effect of a spike. Critical workloads that need
+      guaranteed performance would move to their own capacity.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/enterprise/surge-protection
+        title: Manage surge protection for Fabric capacities
+      - url: https://learn.microsoft.com/fabric/enterprise/capacity-planning-scale-self-service-analytics
+        title: Microsoft Fabric capacity planning guide - Scale for decentralized analytics
+    value_field_labels:
+      starting_sku:
+        label: Starting SKU
+        hint: The F SKU to begin with. Size it from a trial or pilot, and review it with the Capacity Metrics app.
+      surge_level:
+        label: Surge protection level
+        hint: Capacity level is generally available. Capacity and workspace level adds per-workspace limits and is in preview.
+  - value: split_dev_prod
+    label: Separate capacities for development and production
+    description: A smaller capacity for non-production environments and a dedicated one for production.
+    tradeoff: Test load can't slow production, and dev can be paused, but you pay for two or more capacities.
+    pros:
+      - Stress tests and experiments can't throttle production users
+      - Development capacities can be small, and paused when idle
+      - Production capacity can be sized and reserved for predictable use
+    cons:
+      - Needs at least two environments with their own workspaces
+      - Pausing a capacity makes every workload on it unavailable
+      - More capacities to size, monitor and pay for
+    adr_context: >-
+      Development and production were put on separate capacities. Non-production work can be
+      stressed or paused without affecting production users, and production is sized for its own
+      demand.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/well-architected/microsoft-fabric/cost-optimization
+        title: Cost considerations for Microsoft Fabric workloads
+      - url: https://learn.microsoft.com/fabric/enterprise/capacity-planning-plan-deployment
+        title: Microsoft Fabric capacity planning guide - Plan your first deployment
+  - value: split_by_bu
+    label: Capacity per business unit
+    description: Each department or business unit gets its own capacity for its workspaces.
+    tradeoff: Clear isolation and cost attribution, but idle capacity still costs money.
+    pros:
+      - Complete compute isolation between business units
+      - Costs map straight to each unit through Azure billing
+      - Suits mission-critical solutions that need guaranteed performance
+    cons:
+      - Underused capacities still incur cost
+      - More admin work to size, monitor and delegate each capacity
+      - Loses the saving from pooling peaks across teams
+    adr_context: >-
+      A capacity per business unit was chosen. Business units need predictable performance and
+      direct cost attribution, and the team accepts that capacity may sit partly idle in return
+      for isolation.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/enterprise/capacity-planning-scale-self-service-analytics
+        title: Microsoft Fabric capacity planning guide - Scale for decentralized analytics
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns
+        title: Choose a Microsoft Fabric deployment pattern
+  - value: split_back_front
+    label: Back-end and front-end capacities
+    description: Ingestion and transformation run on one capacity. Models and reports for consumers run on another.
+    tradeoff: Heavy data jobs can't slow reports, but you must size and pay for both capacities.
+    pros:
+      - Consumers keep a stable experience while batch jobs run
+      - Each capacity is sized for its own workload pattern
+      - The front-end capacity can be sized at F64 or larger for free viewers
+    cons:
+      - Items must be placed carefully so each workload lands on the right capacity
+      - Two capacities to monitor and pay for
+      - Cross-capacity reads need shortcuts or models that point at the back end
+    adr_context: >-
+      Back-end and front-end capacities were chosen. Data processing is kept off the capacity
+      that serves reports, so batch jobs don't affect consumers, and each capacity is sized for
+      its own load.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/enterprise/capacity-planning-enterprise-managed-self-service-solutions
+        title: Microsoft Fabric capacity planning guide - Scale for centralized analytics
+      - url: https://learn.microsoft.com/fabric/enterprise/licenses
+        title: Understand Microsoft Fabric licenses and capacity
+rule_reasons:
+  needs_two_envs: Separate development and production capacities only make sense with at least two environments. Choose Dev and Prod, or Dev, Test and Prod, in the environments decision.

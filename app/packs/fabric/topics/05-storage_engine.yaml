@@ -1,0 +1,85 @@
+id: storage_engine
+title: Storage engine
+situation: >-
+  Both lakehouses and warehouses store data as Delta tables in OneLake, so the choice is about
+  who works with the data and how. Lakehouses suit Spark, notebooks and mixed file types.
+  Warehouses suit T-SQL teams who want full SQL transactions and dimensional modelling. You can
+  also mix them across layers.
+intake:
+  - Is your team more comfortable in Spark and Python, or in T-SQL?
+  - Do you need multi-table transactions or stored procedures in the serving layer?
+  - Will you land unstructured or semi-structured files, or only relational data?
+recommendation_note: ''
+adr_context: >-
+  The storage engine was chosen using Microsoft's data store decision guide, which separates
+  lakehouses for data engineering and mixed data types from warehouses for SQL-first
+  enterprise warehousing. Because both write Delta tables to OneLake, consumers can read the
+  data with other engines whichever item type was chosen.
+options:
+  - value: lakehouse_only
+    label: Lakehouse only
+    description: Every layer is a lakehouse. Business users read through the SQL analytics endpoint.
+    tradeoff: One engine and one skill set, but T-SQL users get a read-only endpoint.
+    pros:
+      - Handles files, semi-structured and structured data in one place
+      - Spark, notebooks and SQL endpoint all read the same Delta tables
+      - Fits teams that are strong in PySpark and Delta Lake
+    cons:
+      - The SQL analytics endpoint is read-only, so T-SQL writes aren't possible
+      - No multi-table transactions of the kind a warehouse provides
+      - T-SQL developers have to work through Spark to change data
+    adr_context: >-
+      Lakehouses were chosen for every layer. The team works mainly in Spark and notebooks, and
+      T-SQL users only need to read, which the SQL analytics endpoint supports.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/decision-guide-data-store
+        title: Microsoft Fabric decision guide - Choose a data store
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-medallion-lakehouse-architecture
+        title: Understand medallion architecture for Fabric with OneLake
+  - value: warehouse_only
+    label: Warehouse only
+    description: Every layer is a Fabric warehouse, modelled and loaded with T-SQL.
+    tradeoff: Full T-SQL and transactions throughout, but it is less natural for raw files and Spark.
+    pros:
+      - Full T-SQL support including transactions across tables
+      - Familiar to SQL Server and data warehouse developers
+      - Table clones and restore points are built in
+    cons:
+      - Raw files and semi-structured data are awkward to land
+      - Spark users read through endpoints rather than owning the tables
+      - Less suited to Bronze data that arrives as files
+    adr_context: >-
+      Warehouses were chosen for every layer. The team is T-SQL based, wants transactions across
+      tables, and loads mostly relational sources, so Delta tables are produced and read with SQL.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/decision-guide-data-store
+        title: Microsoft Fabric decision guide - Choose a data store
+      - url: https://learn.microsoft.com/fabric/data-warehouse/clone-table
+        title: Clone table in Microsoft Fabric
+  - value: lakehouse_warehouse
+    label: Lakehouse for Bronze and Silver, Warehouse for Gold
+    description: Engineers use lakehouses for the lower layers. Gold is a warehouse that business users query through its own endpoint.
+    tradeoff: Each layer uses the engine that suits it, at the cost of two skill sets.
+    pros:
+      - Matches Microsoft's documented medallion pattern 2
+      - Spark handles raw and cleaned data, T-SQL handles the serving model
+      - The Gold warehouse supports dimensional modelling with full T-SQL
+    cons:
+      - The team needs both Spark and T-SQL skills
+      - A second item type to secure, monitor and promote
+      - Moving data from lakehouse to warehouse adds a step
+    adr_context: >-
+      Lakehouses were chosen for Bronze and Silver and a warehouse for Gold. Engineers get Spark
+      for raw and cleaned data, and Gold users get a T-SQL warehouse, which follows the second
+      deployment pattern in Microsoft's medallion guidance.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-medallion-lakehouse-architecture
+        title: Understand medallion architecture for Fabric with OneLake
+      - url: https://learn.microsoft.com/fabric/data-factory/common-dbt-job-patterns
+        title: Common dbt job patterns in Microsoft Fabric

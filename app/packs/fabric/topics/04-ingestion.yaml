@@ -1,0 +1,224 @@
+id: ingestion
+title: Ingestion mechanisms
+situation: >-
+  Fabric offers several ways to bring data in, and most estates use more than one. Some copy
+  data on a schedule, some replicate continuously, some stream events, and some leave the data
+  where it is and reference it. Pick the mechanisms each source family will use, because they
+  differ in cost, freshness, transformation support and how much you build yourself.
+intake:
+  - Which sources do you have today, and for each one, how fresh must the data be in Fabric?
+  - Do any sources already sit in ADLS Gen2, S3 or OneLake, where a shortcut avoids copying?
+  - Which sources are databases that mirroring supports, and which need transformation on the way in?
+  - Do you run Dynamics 365 or Power Apps on Dataverse?
+recommendation_note: ''
+adr_context: >-
+  The ingestion mechanisms were chosen per source family. Microsoft's decision guide separates
+  mirroring for continuous replication, copy job for bulk and incremental loads, pipelines for
+  orchestrated workflows, and eventstreams for streaming, and each source was matched to the
+  mechanism that fits its freshness and transformation needs.
+options:
+  - value: copy_job
+    label: Copy job
+    description: Item for bulk, incremental and change-data-capture copies between many sources and destinations, without building a pipeline.
+    tradeoff: Easier than pipelines for ingestion, with little room for transformation.
+    pros:
+      - Supports bulk copy, watermark-based incremental copy and CDC replication
+      - No pipeline to build or maintain for plain table loads
+      - Microsoft suggests it as the starting point for raw Bronze ingestion
+    cons:
+      - Low transformation support, so cleaning happens in a later step
+      - Compute is billed against your capacity, unlike mirroring
+      - Less control over custom logic than copy activities in a pipeline
+    adr_context: >-
+      Copy job was chosen for raw ingestion into Bronze. It handles bulk, incremental and CDC
+      loads for the supported connectors without a hand-built pipeline, and transformation is
+      left to later layers.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-factory/decision-guide-data-movement
+        title: Microsoft Fabric decision guide - Choose a data movement strategy
+      - url: https://learn.microsoft.com/fabric/data-factory/decision-guide-data-integration
+        title: Microsoft Fabric decision guide - Choose a data integration strategy
+  - value: pipelines
+    label: Data Factory pipelines
+    description: Orchestrated workflows built from copy activities, control flow and other activities.
+    tradeoff: Most flexible and the most to build, including your own incremental-load state.
+    pros:
+      - Copy activities can be parameterised for metadata-driven ingestion
+      - Control flow handles loops, conditions and dependencies between steps
+      - Can chain notebooks, dataflows and warehouse scripts in one run
+    cons:
+      - You track the last-loaded watermark yourself for incremental copy
+      - More items to build, test and promote than a copy job
+      - Transformation support inside the copy activity is low
+    adr_context: >-
+      Data Factory pipelines were chosen where ingestion is part of a larger orchestrated flow.
+      Copy activities are parameterised by metadata, and the pipeline owns scheduling, retries
+      and the incremental state.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-factory/decision-guide-data-movement
+        title: Microsoft Fabric decision guide - Choose a data movement strategy
+      - url: https://learn.microsoft.com/fabric/data-factory/data-factory-overview
+        title: What is Data Factory in Microsoft Fabric?
+  - value: mirroring
+    label: Mirroring
+    description: Continuously replicates a supported database into OneLake as read-only Delta tables, with no pipeline.
+    tradeoff: Free replication compute and near real-time, but it only works for supported sources.
+    pros:
+      - Replication compute is free and doesn't use your capacity
+      - Storage is free up to a limit tied to the capacity size
+      - No code and no pipeline to run
+    cons:
+      - Limited to the supported source types, and some of them are still in preview
+      - Destination is a single read-only mirrored database with no transformation
+      - Querying the mirrored data still uses capacity
+    adr_context: >-
+      Mirroring was chosen for supported operational databases. It replicates changes into
+      OneLake without a pipeline, and the mirrored database serves as the Bronze copy for those
+      sources.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/mirroring/overview
+        title: What is Mirroring in Fabric?
+      - url: https://learn.microsoft.com/fabric/data-factory/decision-guide-data-movement
+        title: Microsoft Fabric decision guide - Choose a data movement strategy
+  - value: shortcuts
+    label: OneLake shortcuts
+    description: Reference data in ADLS Gen2, S3, SharePoint or other OneLake locations without copying it.
+    tradeoff: No copy and no load job, but you depend on the source being available.
+    pros:
+      - No ingestion to run, and no second copy to pay for
+      - Useful when residency or duplication concerns rule out copying
+      - Shortcut transformations can turn files into Delta tables that stay in sync
+    cons:
+      - Items that rely on a shortcut fail if the external source is unavailable
+      - Read performance and security depend on the source system
+      - Firewalled storage needs a workspace identity and trusted access
+    adr_context: >-
+      OneLake shortcuts were chosen for data that already sits in storage the team owns. The
+      data is referenced rather than copied, which avoids a second copy and the load job that
+      would maintain it.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/get-data
+        title: Get data into Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/onelake/unify-data
+        title: Unify data with OneLake shortcuts and mirroring
+  - value: notebooks
+    label: Notebooks
+    description: Spark or Python code that pulls data from APIs, files or databases and writes Delta tables.
+    tradeoff: Full control for odd sources, but you own the code, the retries and the testing.
+    pros:
+      - Reaches sources that no connector covers, such as custom APIs
+      - Handles complex parsing and transformation during ingestion
+      - Notebooks run under Git integration and deployment pipelines
+    cons:
+      - Every load needs code that someone has to maintain
+      - Error handling and incremental state are your job
+      - Spark session start-up and capacity use add cost for small loads
+    adr_context: >-
+      Notebooks were chosen for sources that have no suitable connector. The team accepts that
+      each load is custom code, and keeps those notebooks in Git with the same review rules as
+      other transformation code.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-factory/decision-guide-data-integration
+        title: Microsoft Fabric decision guide - Choose a data integration strategy
+      - url: https://learn.microsoft.com/fabric/fundamentals/prepare-transform-data
+        title: Prepare and transform data in Microsoft Fabric
+  - value: dataflow_gen2
+    label: Dataflow Gen2
+    description: Low-code Power Query dataflows that connect to hundreds of sources and load to lakehouse or warehouse tables.
+    tradeoff: Fast for analysts to build, but heavier on capacity for large volumes.
+    pros:
+      - Visual Power Query interface with more than 300 transformations
+      - Business analysts can build loads without writing code
+      - Can write to multiple destinations and run inside a pipeline
+    cons:
+      - Capacity use depends on query evaluation time and staging, so large loads cost more
+      - Harder to review in a pull request than code
+      - Not the best fit for high-volume raw ingestion
+    adr_context: >-
+      Dataflow Gen2 was chosen for small and medium sources owned by analyst teams. It gives a
+      low-code route into the lakehouse, with the Power Query logic stored as a Git-integrated item.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-factory/dataflows-gen2-overview
+        title: What is Dataflow Gen2?
+      - url: https://learn.microsoft.com/fabric/fundamentals/prepare-transform-data
+        title: Prepare and transform data in Microsoft Fabric
+  - value: eventstream
+    label: Eventstream
+    description: Ingests and processes streaming events and routes them to Eventhouse, lakehouse or other destinations.
+    tradeoff: Low latency for streaming data, with a different skill set from batch loading.
+    pros:
+      - Real-time ingestion with low-code transformation and routing
+      - Reads from more than 25 sources and supports change-data-capture feeds
+      - Can route one stream to several destinations
+    cons:
+      - Streaming adds operational concepts the batch team may not know
+      - Only a few destination types, and append-only writes
+      - Private link support has gaps for some destinations
+    adr_context: >-
+      Eventstreams were chosen for sources that emit events. They provide low-latency ingestion
+      and routing into Eventhouse or the lakehouse without a separate streaming platform.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-factory/decision-guide-data-movement
+        title: Microsoft Fabric decision guide - Choose a data movement strategy
+      - url: https://learn.microsoft.com/fabric/security/security-private-links-overview
+        title: Private links for Fabric tenants
+  - value: fabric_link
+    label: Fabric Link (Dataverse)
+    description: Links a Dataverse environment to a Fabric workspace with no copy and no ETL. Use for Dynamics 365 and Power Apps data only.
+    tradeoff: Simplest route for Dataverse, but it consumes Dataverse storage and adds all change-tracked tables.
+    pros:
+      - No pipeline, no storage account and no Synapse workspace to set up
+      - Creates a lakehouse, SQL endpoint and semantic model for the data
+      - Microsoft marks it as the recommended way to link Dataverse to Fabric
+    cons:
+      - Adds every non-system table that has change tracking, and you can't remove them
+      - Consumes extra Dataverse database storage
+      - A Dataverse environment links to a single Fabric workspace today
+    adr_context: >-
+      Fabric Link was chosen for Dataverse and Dynamics 365 data. It exposes the tables in
+      OneLake through shortcuts without a copy pipeline, and the extra Dataverse storage it
+      consumes is accepted.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-apps/maker/data-platform/fabric-link-to-data-platform
+        title: Link to Microsoft Fabric
+      - url: https://learn.microsoft.com/power-apps/maker/data-platform/azure-synapse-link-transition-faq
+        title: Frequently asked questions when transitioning from legacy data integration services
+  - value: synapse_link
+    label: Azure Synapse Link (Dataverse)
+    description: Exports Dataverse tables continuously to your own storage account, which Fabric can read. Use for Dataverse only.
+    tradeoff: You choose the tables and keep the data in your storage, but you manage that storage and its access.
+    pros:
+      - You select which tables to export
+      - Data lands in your own storage account, under your own access rules
+      - Existing profiles that save Delta files can be linked to Fabric
+    cons:
+      - You manage the storage account, access and any integration pipelines
+      - Profiles that write CSV can't be linked to Fabric
+      - Profiles secured with managed identities can't be linked to Fabric
+    adr_context: >-
+      Azure Synapse Link for Dataverse was chosen over Fabric Link because the team needs to
+      select tables and keep the exported data in its own storage account. The Dataverse export
+      is read into Fabric from that storage.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-apps/maker/data-platform/azure-synapse-link-view-in-fabric
+        title: Link your Dataverse environment to Microsoft Fabric and unlock deep insights
+      - url: https://learn.microsoft.com/power-apps/maker/data-platform/azure-synapse-link-transition-faq
+        title: Frequently asked questions when transitioning from legacy data integration services

@@ -1,0 +1,85 @@
+id: isolation_strategy
+title: Workspace isolation strategy
+situation: >-
+  A Fabric workspace is the unit for access, Git connection and capacity assignment, so how you
+  split layers and environments across workspaces decides who can touch what. More workspaces
+  give tighter boundaries and clearer ownership. They also mean more items to wire together,
+  more role assignments and more promotion steps.
+intake:
+  - Must the people who load raw data be kept apart from the people who read Gold, by policy or by regulation?
+  - Do you need separate workspaces per environment so deployment pipelines or Git branches can work?
+  - How many teams will own items, and can they cope with a handful of workspaces each?
+recommendation_note: ''
+adr_context: >-
+  The workspace layout was decided against Microsoft's guidance that each medallion layer sits
+  in its own lakehouse or warehouse, and that a separate workspace per layer gives the most
+  control. The chosen split balances that isolation against the number of workspaces the team
+  can administer.
+options:
+  - value: per_layer_per_env
+    label: Workspace per layer and environment
+    description: Every layer in every environment gets its own workspace, for example Bronze-Prod and Silver-Dev.
+    tradeoff: Strongest separation of access and duties, at the price of the most workspaces.
+    pros:
+      - Roles and capacity can differ per layer, so raw data stays with a small group
+      - Matches Microsoft's recommendation of one workspace per lakehouse
+      - Deployment pipelines get separate workspaces per stage
+    cons:
+      - Three layers across three environments is nine workspaces to name, secure and connect
+      - Cross-workspace reads need shortcuts or three-part names, which adds setup
+      - Higher coordination cost when one change touches several layers
+    adr_context: >-
+      One workspace per layer and environment was chosen. Raw, cleaned and curated data have
+      different owners and different access rules, and the team accepts the extra workspaces and
+      cross-workspace shortcuts in exchange for strict separation of duties.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-medallion-lakehouse-architecture
+        title: Understand medallion architecture for Fabric with OneLake
+      - url: https://learn.microsoft.com/azure/cloud-adoption-framework/data/governance-security-baselines-fabric-data-lake-unify-data-platform
+        title: Fabric governance and security baselines
+  - value: bronze_silver_shared
+    label: Bronze and Silver shared, Gold separate
+    description: Engineers work in one workspace for Bronze and Silver. Gold sits in its own workspace for consumers.
+    tradeoff: Keeps engineering simple while giving report builders a clean boundary.
+    pros:
+      - Data engineers see raw and cleaned data in one place, which speeds debugging
+      - Gold access can be granted to analysts without exposing Bronze
+      - Fewer workspaces than a split per layer
+    cons:
+      - Anyone with access to the engineering workspace can read raw data
+      - Bronze and Silver share one set of roles and one capacity
+      - Promoting only Silver to another stage is harder
+    adr_context: >-
+      Bronze and Silver were placed in one engineering workspace and Gold in a separate one. The
+      engineering team owns both lower layers and needs to move between them freely, while
+      consumers only ever need Gold.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/cloud-adoption-framework/data/governance-security-baselines-fabric-data-lake-unify-data-platform
+        title: Fabric governance and security baselines
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns
+        title: Choose a Microsoft Fabric deployment pattern
+  - value: one_per_env
+    label: One workspace per environment
+    description: All layers live in one workspace per environment, as separate lakehouses or as schemas.
+    tradeoff: Simplest to run, but layers share one set of roles and one security boundary.
+    pros:
+      - Fewest workspaces, so the least administration
+      - All items of a data product sit together and are easy to find
+      - Fine for one team that owns the whole pipeline
+    cons:
+      - One role set covers every layer, so raw data is as visible as Gold
+      - Schemas inside one lakehouse need discipline to keep raw and curated data apart
+      - Hard to split later without moving items between workspaces
+    adr_context: >-
+      A single workspace per environment was chosen. One team owns the full pipeline and moderate
+      isolation meets governance needs. Layers are kept apart by lakehouse or schema, and the
+      layout is revisited if regulatory separation of duties is introduced.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/cloud-adoption-framework/data/governance-security-baselines-fabric-data-lake-unify-data-platform
+        title: Fabric governance and security baselines

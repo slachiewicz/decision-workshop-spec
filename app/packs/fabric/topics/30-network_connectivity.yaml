@@ -1,0 +1,90 @@
+id: network_connectivity
+title: Network and private connectivity
+situation: >-
+  By default, Fabric is reached over public endpoints and protected by Microsoft Entra sign-in.
+  Private links route inbound traffic over your virtual network instead. They can apply to the
+  whole tenant or to selected workspaces. Outbound access protection and trusted workspace
+  access control what your workspaces can reach. Each step adds network work and removes some
+  features.
+intake:
+  - Does a policy or regulator require that analytics traffic never crosses the public internet?
+  - Which data sources sit behind firewalls or private endpoints, and must Fabric reach them?
+  - Which features do you rely on that private links limit, such as on-premises gateways, Copilot or trial capacities?
+recommendation_note: ''
+adr_context: >-
+  The network posture was chosen from the options Fabric provides: public endpoints with
+  identity controls, tenant-level private links, or workspace-level private links with
+  outbound access protection. The decision records which inbound and outbound paths are
+  allowed, and which Fabric features are given up in exchange.
+options:
+  - value: public_endpoints
+    label: Public endpoints
+    description: Users and tools reach Fabric over the internet, protected by Entra sign-in and Conditional Access.
+    tradeoff: Nothing to set up and every feature works, but traffic isn't confined to a private network.
+    pros:
+      - No private DNS, virtual network or endpoint work
+      - All Fabric features and tools work, including on-premises data gateways and Copilot
+      - Conditional Access can still enforce MFA, device compliance and location rules
+    cons:
+      - Doesn't meet a requirement that traffic stay on a private network
+      - Conditional Access needs Microsoft Entra ID P1
+      - Firewalled sources need trusted workspace access or a gateway
+    adr_context: >-
+      Public endpoints were chosen. Access is protected by Microsoft Entra sign-in and
+      Conditional Access, no policy requires private connectivity, and the team keeps the full
+      feature set. Firewalled storage is reached through trusted workspace access.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns
+        title: Choose a Microsoft Fabric deployment pattern
+      - url: https://learn.microsoft.com/fabric/security/security-trusted-workspace-access
+        title: Trusted workspace access
+  - value: tenant_private_link
+    label: Tenant-level private link
+    description: Azure Private Link applies to the whole tenant, and you can block public internet access to Fabric.
+    tradeoff: One switch secures every workspace, but it affects many items and removes some features.
+    pros:
+      - Inbound traffic follows your configured private network path
+      - Can deny all requests that don't arrive by that path
+      - No per-workspace configuration
+    cons:
+      - On-premises data gateways fail to register, so use a virtual network data gateway
+      - Trial capacities, Copilot and some Power BI features don't work over private link
+      - Spark starter pools are disabled, and jobs run on custom pools in a managed virtual network
+      - A new capacity can take up to 24 hours to be reachable over private link
+    adr_context: >-
+      Tenant-level private links were chosen with public internet access blocked. Policy requires
+      that all inbound traffic use the private network. The team accepts the loss of on-premises
+      gateways, trial capacities and Copilot, and the move of Spark jobs to custom pools.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/security/security-private-links-overview
+        title: Private links for Fabric tenants
+  - value: workspace_private_links
+    label: Workspace-level private links with outbound protection
+    description: Private links and managed networking for selected workspaces, with outbound access blocked except for approved targets.
+    tradeoff: Secures only the sensitive workspaces and leaves the rest open, at the cost of per-workspace setup.
+    pros:
+      - Restricts inbound access to chosen workspaces without tenant-wide change
+      - Outbound access protection blocks connections except managed private endpoints and data connection rules
+      - Trusted workspace access lets a workspace identity reach firewalled ADLS Gen2 storage
+    cons:
+      - Works only on F SKU capacities, with one private link service per workspace
+      - Portal can't set inbound and outbound protection together, so use the network policy API
+      - Cross-workspace reads need managed private endpoints, and some item types aren't supported
+    adr_context: >-
+      Workspace-level private links and outbound access protection were chosen for the
+      workspaces that hold sensitive data. Other workspaces stay on public endpoints. Approved
+      destinations are allowed through managed private endpoints, data connection rules and
+      trusted workspace access.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/security/security-workspace-level-private-links-overview
+        title: Workspace-level private links in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/security/security-workspace-level-private-links-support
+        title: Supported scenarios and limitations for workspace-level private links
+      - url: https://learn.microsoft.com/fabric/security/workspace-outbound-access-protection-overview
+        title: Workspace outbound access protection

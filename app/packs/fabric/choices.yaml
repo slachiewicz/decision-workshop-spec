@@ -1,14 +1,48 @@
-# Choice lists for select value fields. Checked 2026-10-18. Agent A completes azure_regions
-# from https://learn.microsoft.com/fabric/admin/region-availability
+# Choice lists for select value fields. Checked 2026-10-18. azure_regions lists the regions where
+# all Fabric workloads are available (learn.microsoft.com/fabric/admin/region-availability); Power BI-only regions are left out.
 azure_regions:
-  - { value: westeurope, label: West Europe }
-  - { value: northeurope, label: North Europe }
-  - { value: swedencentral, label: Sweden Central }
-  - { value: germanywestcentral, label: Germany West Central }
-  - { value: switzerlandnorth, label: Switzerland North }
-  - { value: uksouth, label: UK South }
+  - { value: brazilsouth, label: Brazil South }
+  - { value: canadacentral, label: Canada Central }
+  - { value: canadaeast, label: Canada East }
+  - { value: mexicocentral, label: Mexico Central }
+  - { value: centralus, label: Central US }
   - { value: eastus, label: East US }
+  - { value: eastus2, label: East US 2 }
+  - { value: northcentralus, label: North Central US }
+  - { value: southcentralus, label: South Central US }
+  - { value: westus, label: West US }
   - { value: westus2, label: West US 2 }
+  - { value: westus3, label: West US 3 }
+  - { value: northeurope, label: North Europe }
+  - { value: westeurope, label: West Europe }
+  - { value: francecentral, label: France Central }
+  - { value: germanywestcentral, label: Germany West Central }
+  - { value: italynorth, label: Italy North }
+  - { value: norwayeast, label: Norway East }
+  - { value: polandcentral, label: Poland Central }
+  - { value: spaincentral, label: Spain Central }
+  - { value: swedencentral, label: Sweden Central }
+  - { value: switzerlandnorth, label: Switzerland North }
+  - { value: switzerlandwest, label: Switzerland West }
+  - { value: uksouth, label: UK South }
+  - { value: ukwest, label: UK West }
+  - { value: uaenorth, label: UAE North }
+  - { value: southafricanorth, label: South Africa North }
+  - { value: eastasia, label: East Asia }
+  - { value: southeastasia, label: Southeast Asia }
+  - { value: australiaeast, label: Australia East }
+  - { value: australiasoutheast, label: Australia Southeast }
+  - { value: centralindia, label: Central India }
+  - { value: southindia, label: South India }
+  - { value: indonesiacentral, label: Indonesia Central }
+  - { value: israelcentral, label: Israel Central }
+  - { value: japaneast, label: Japan East }
+  - { value: japanwest, label: Japan West }
+  - { value: koreacentral, label: Korea Central }
+  - { value: malaysiawest, label: Malaysia West }
+  - { value: newzealandnorth, label: New Zealand North }
+  - { value: taiwannorth, label: Taiwan North }
+  - { value: taiwannorthwest, label: Taiwan Northwest }
 fabric_skus:
   - { value: F2, label: F2 }
   - { value: F4, label: F4 }

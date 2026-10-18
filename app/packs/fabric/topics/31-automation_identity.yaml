@@ -1,0 +1,88 @@
+id: automation_identity
+title: Identity for automation
+situation: >-
+  Pipelines, deployments and API calls need an identity. Fabric offers a workspace identity that
+  it manages for you, Microsoft Entra service principals that you create and secure yourself, and
+  the identity of a signed-in user. Each differs in who rotates credentials, where it works and
+  what happens when a person leaves the team.
+intake:
+  - Which automated jobs and deployments run today, and under whose credentials?
+  - Who in your organisation can create and own service principals, and who rotates their secrets?
+  - Do any data sources sit behind firewalls that a workspace identity could reach?
+recommendation_note: ''
+adr_context: >-
+  The automation identities were chosen to avoid tying production jobs to a person. Workspace
+  identities cover supported Fabric connections without stored credentials, service principals
+  cover deployment and API automation, and user identities are limited to interactive work.
+options:
+  - value: workspace_identity
+    label: Workspace identity
+    description: A service principal that Fabric creates and manages for a workspace, with no credentials for you to handle.
+    tradeoff: No secrets to rotate, but it only works for supported items and stays inside one tenant.
+    pros:
+      - Fabric manages the credentials, so there's nothing to leak or let expire
+      - Lets a workspace reach firewalled ADLS Gen2 storage through trusted workspace access
+      - Usable for shortcuts, pipelines, semantic models and Dataflows Gen2
+    cons:
+      - Doesn't work for cross-tenant requests or for gateway connections
+      - Trusted workspace access needs a purchased F SKU capacity
+      - Whoever runs a pipeline needs a Contributor or higher role in the workspace
+    adr_context: >-
+      Workspace identities were chosen for Fabric items that connect to Azure storage and other
+      supported sources. Fabric manages the credentials, and access is granted to the identity
+      on the target resource.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/security/workspace-identity
+        title: Workspace identity
+      - url: https://learn.microsoft.com/fabric/security/workspace-identity-authenticate
+        title: Authenticate with workspace identity
+  - value: service_principals
+    label: Service principals
+    description: Microsoft Entra app registrations with a secret or certificate, used by CI/CD and scripts to call Fabric APIs.
+    tradeoff: Works across Fabric APIs and tools, but you create, secure and rotate each one.
+    pros:
+      - Needed for non-interactive Git, deployment and REST API automation
+      - Can be limited to a security group in the tenant settings
+      - Gets only the workspace role you assign, such as Contributor
+    cons:
+      - A tenant admin has to enable service principals for Fabric APIs
+      - Client secrets expire and must be rotated and stored safely
+      - Some features, such as data agents on Kusto sources, don't yet support them
+    adr_context: >-
+      Service principals were chosen for deployment pipelines and API automation. The tenant
+      setting is limited to a dedicated security group, each principal holds the lowest workspace
+      role that works, and secrets are stored in a managed vault and rotated.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/admin/service-admin-portal-developer
+        title: Developer tenant settings
+      - url: https://learn.microsoft.com/fabric/data-warehouse/service-principals
+        title: Service principals in Fabric Data Warehouse
+      - url: https://learn.microsoft.com/fabric/cicd/tutorial-end-to-end-automation
+        title: Tutorial - End-to-end automation in Fabric
+  - value: user_identity
+    label: User identity
+    description: Jobs and connections run as a signed-in person and use that person's permissions.
+    tradeoff: Easiest to start with, but production depends on one person's account.
+    pros:
+      - No extra identities to create or register
+      - Multifactor authentication and Conditional Access apply to the person
+      - Fine for interactive development and one-off tasks
+    cons:
+      - Connections that use a personal account are not supported with trusted workspace access
+      - Work can break when the person changes role or leaves
+      - Personal tokens, such as a GitHub PAT, have to be managed per person
+    adr_context: >-
+      User identities were chosen for interactive development and one-off work only. Production
+      jobs use workspace identities or service principals so they don't depend on a person's
+      account.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/security/security-trusted-workspace-access
+        title: Trusted workspace access
+      - url: https://learn.microsoft.com/fabric/cicd/git-integration/git-get-started
+        title: Get started with Git integration

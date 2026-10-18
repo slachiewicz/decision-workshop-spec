@@ -1,0 +1,94 @@
+id: backup_restore
+title: Backup and point-in-time restore
+situation: >-
+  Disaster recovery covers the loss of a region. Backup and restore covers a bad DELETE, a
+  failed release or a dropped table. Fabric keeps several short recovery windows on its own,
+  including OneLake soft delete, item recovery, Delta history and warehouse restore points. The
+  question is whether those windows are long enough, or whether you add restore points, Git or
+  scheduled copies.
+intake:
+  - How far back might someone notice a bad change, in hours, days or weeks?
+  - Which tables or warehouses would hurt most to lose, and how fast must they return?
+  - Does an audit or contract require a copy that sits outside the item that could be deleted?
+recommendation_note: ''
+adr_context: >-
+  The restore approach was chosen against the recovery windows that Fabric provides by
+  default. It records which windows are relied on, what is added on top, and the oldest point
+  in time the team can return to after an accidental change or a failed release.
+options:
+  - value: platform_defaults
+    label: Platform defaults only
+    description: Rely on soft delete, item recovery, Delta history and the warehouse's automatic restore points.
+    tradeoff: Nothing to run, but every window is short and fixed by the platform or by retention settings.
+    pros:
+      - OneLake soft delete keeps deleted files for seven days
+      - Deleted items can be restored from the workspace recycle bin during the retention period
+      - Warehouses create restore points every eight hours and keep 30 days of history by default
+    cons:
+      - Windows are measured in days, and a change noticed late can't be undone
+      - Item recovery is three days by default
+      - Soft-deleted data is billed at the normal rate
+    adr_context: >-
+      Platform defaults were chosen. The recovery windows that Fabric provides, namely OneLake
+      soft delete, item recovery, Delta history and automatic warehouse restore points, are
+      enough for the data, and no extra backup is run.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/soft-delete
+        title: Recover deleted files in OneLake
+      - url: https://learn.microsoft.com/fabric/admin/retention-recovery
+        title: Retention and recovery in Fabric
+      - url: https://learn.microsoft.com/fabric/data-warehouse/restore-in-place
+        title: Restore in-place of a warehouse in Microsoft Fabric
+  - value: restore_points_and_git
+    label: Restore points, clones and Git
+    description: Add user-defined warehouse restore points, longer retention, Delta restore and Git history for items.
+    tradeoff: Longer and more deliberate recovery, at the cost of storage, a habit and some discipline.
+    pros:
+      - User-defined restore points can be created before and after large changes
+      - Warehouse retention can be raised to 120 days, and table clones can be made at a past point in time
+      - Delta RESTORE rolls a lakehouse table back to an earlier version
+      - Git history restores item definitions
+    cons:
+      - Longer retention raises storage cost
+      - Delta restore fails if VACUUM already removed the files for that version
+      - Warehouse retention settings are in preview
+    adr_context: >-
+      Warehouse restore points, extended retention, table clones, Delta restore and Git history
+      were chosen. Restore points are created before each release, retention is raised above the
+      default, and item definitions are kept in Git, so most mistakes can be undone within weeks.
+    maturity: preview
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-warehouse/data-retention
+        title: Data retention in Fabric Data Warehouse (preview)
+      - url: https://learn.microsoft.com/fabric/data-warehouse/restore-in-place
+        title: Restore in-place of a warehouse in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/data-warehouse/clone-table
+        title: Clone table in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/data-engineering/delta-lake-restore
+        title: Restore Delta tables
+  - value: scheduled_copies
+    label: Scheduled copies to separate storage
+    description: Copy critical tables on a schedule to a separate workspace or storage account, on top of the other recovery windows.
+    tradeoff: Survives deletion of the item itself and outlasts retention windows, but you run and pay for the copies.
+    pros:
+      - A copy outside the item survives the deletion of that item or workspace
+      - Retention is set by you, not by the platform's fixed windows
+      - Meets audit or contract rules that ask for a separate copy
+    cons:
+      - Copy jobs, storage and monitoring are yours to run
+      - Restoring from a copy is a manual procedure that needs testing
+      - Copies are only as recent as the last run
+    adr_context: >-
+      Scheduled copies of critical tables to separate storage were chosen in addition to the
+      platform's recovery windows. The copies sit outside the item and workspace that could be
+      deleted, and the retention period is set by the business rather than by platform defaults.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/security/reliability-fabric
+        title: Reliability in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/data-factory/decision-guide-data-movement
+        title: Microsoft Fabric decision guide - Choose a data movement strategy

@@ -1,0 +1,64 @@
+id: transform_location
+title: Transformation location
+situation: >-
+  Notebooks, pipelines and dataflows have to live in a workspace. You can keep them next to the
+  layer they write, or gather them in a dedicated engineering workspace that writes into the
+  data workspaces. The choice affects who needs write access to which data, which capacity pays
+  for the compute, and how code is promoted between environments.
+intake:
+  - Should the people who write transformation code also hold write access to the data workspaces?
+  - Do you want transformation compute billed to the same capacity as the data, or to a separate one?
+  - How will you promote code, with deployment pipelines per workspace or with fabric-cicd from Git?
+recommendation_note: ''
+adr_context: >-
+  The location of transformation items was decided against Microsoft's guidance that Fabric
+  items are isolated per workspace and that heavy jobs can be separated across workspaces or
+  capacities. The chosen approach sets where code lives, which identity writes data and which
+  capacity carries the compute.
+options:
+  - value: colocated
+    label: Co-located with each layer
+    description: Notebooks and pipelines sit in the same workspace as the lakehouse or warehouse they write to.
+    tradeoff: Few cross-workspace permissions, but code, data and compute are tied together.
+    pros:
+      - Writers need access to only one workspace per layer
+      - Default lakehouse and relative paths work without cross-workspace setup
+      - Code and data are promoted together by one deployment
+    cons:
+      - Anyone who edits the code has the workspace role that also touches the data
+      - Transformation compute is billed to the layer's capacity
+      - Logic spread over layer workspaces is harder to browse as one codebase
+    adr_context: >-
+      Transformation items were co-located with the layer they write. This keeps write access
+      scoped to the layer's own workspace and avoids cross-workspace paths, and code is promoted
+      together with the data items it belongs to.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns
+        title: Choose a Microsoft Fabric deployment pattern
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-medallion-lakehouse-architecture
+        title: Understand medallion architecture for Fabric with OneLake
+  - value: separate_engineering
+    label: Separate engineering workspace
+    description: Notebooks and pipelines live in one engineering workspace and write into lakehouses and warehouses in other workspaces.
+    tradeoff: Clean separation of code from data and its own capacity, at the cost of cross-workspace access.
+    pros:
+      - Code can be reviewed and promoted separately from the data items
+      - The engineering workspace can sit on its own capacity, so heavy jobs don't compete with consumers
+      - One place to browse and secure all transformation logic
+    cons:
+      - Writers need access to every data workspace they touch
+      - Cross-workspace paths use workspace and item IDs, which environments must parameterise
+      - Private link and outbound protection rules apply to each cross-workspace connection
+    adr_context: >-
+      A separate engineering workspace was chosen for transformation items. Code is kept apart
+      from the data it writes, the engineering workspace can run on its own capacity, and the
+      extra cross-workspace permissions and parameterisation are accepted.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/well-architected/microsoft-fabric/performance-efficiency
+        title: Performance efficiency for Microsoft Fabric workloads
+      - url: https://learn.microsoft.com/fabric/security/security-workspace-level-private-links-support
+        title: Supported scenarios and limitations for workspace-level private links

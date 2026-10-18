@@ -1,0 +1,63 @@
+id: table_format
+title: Table format
+situation: >-
+  Every Fabric engine writes Delta tables to OneLake by default. Other platforms often use
+  Apache Iceberg. OneLake can show Iceberg tables as Delta and Delta tables as Iceberg by
+  generating virtual metadata, so both formats can be used without a copy. The decision is
+  whether Delta is enough, or whether you need to read or serve Iceberg as well.
+intake:
+  - Do any partners or platforms in your estate write or read Apache Iceberg tables?
+  - Which engines outside Fabric need to read your Gold tables?
+  - Can you accept that some Iceberg features, such as newer V3 column types, are dropped in conversion?
+recommendation_note: Stay on Delta, which every Fabric engine reads and writes natively. Add Iceberg interoperability for a named consumer or source.
+adr_context: >-
+  Delta was chosen as the table format. Every Fabric engine writes Delta to OneLake by default,
+  and it gives ACID transactions, time travel and the optimisations that Fabric's engines
+  expect. Iceberg interoperability can be added later for a specific consumer without
+  changing the stored tables.
+options:
+  - value: delta
+    label: Delta only
+    description: All tables are Delta Lake tables, the default for every Fabric engine.
+    tradeoff: Simplest and best supported in Fabric, but external Iceberg readers aren't served on purpose.
+    pros:
+      - Native to Spark, SQL, Power BI Direct Lake and every other Fabric engine
+      - Supports ACID transactions, time travel and table history
+      - No conversion step to monitor
+    cons:
+      - Iceberg-only tools need the virtual metadata that you haven't planned for
+      - Existing Iceberg tables elsewhere still need a shortcut to be used
+    adr_context: >-
+      Delta was chosen as the only table format. All Fabric engines use it natively, and no
+      consumer or source in scope requires Iceberg.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-engineering/lakehouse-and-delta-tables
+        title: Lakehouse and Delta Lake tables
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-medallion-lakehouse-architecture
+        title: Understand medallion architecture for Fabric with OneLake
+  - value: delta_iceberg_interop
+    label: Delta with Iceberg interoperability
+    description: Delta stays the storage format. Iceberg tables are read through shortcuts, and Delta tables are exposed to Iceberg readers.
+    tradeoff: Opens your data to Iceberg tools and sources, at the cost of conversion limits to check.
+    pros:
+      - A shortcut to an Iceberg table folder shows it as a Delta table in Fabric
+      - Delta tables get virtual Iceberg metadata, so tools such as Snowflake can read them
+      - No data copy, because only metadata is generated
+    cons:
+      - Some Iceberg types, such as V3 variant and geometry, are dropped in conversion
+      - Conversion can fail on source table content, so the conversion log needs checking
+      - A shortcut must be in the right place to be converted
+    adr_context: >-
+      Delta with Iceberg interoperability was chosen. Delta remains the stored format, and
+      OneLake metadata virtualization lets Iceberg tables from partner platforms be read as Delta
+      and lets Iceberg readers consume Gold tables. The team checks the conversion log and the
+      type mapping for each table it exposes.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-iceberg-tables
+        title: Use Iceberg tables with OneLake
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-overview
+        title: What is OneLake?

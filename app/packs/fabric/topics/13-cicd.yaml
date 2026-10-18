@@ -1,0 +1,94 @@
+id: cicd
+title: CI/CD and deployment
+situation: >-
+  Promoting changes from development to production can be scripted from Git, handled by Fabric
+  deployment pipelines, or done by hand. Git-based deployment with the fabric-cicd library keeps
+  the repository as the source of truth. Deployment pipelines copy items between stage
+  workspaces inside Fabric. Manual promotion is the least to set up and the most error-prone.
+intake:
+  - Do you want Git to be the single source of truth for what runs in production?
+  - Who approves a release, and where should that approval happen?
+  - Which items must be rebound per environment, such as lakehouse IDs and connections?
+recommendation_note: Use Git with fabric-cicd for code-first releases, and add deployment pipelines only where a UI-led stage flow helps.
+adr_context: >-
+  Git with fabric-cicd was chosen as the deployment approach. Item definitions live in the
+  repository, and a pipeline in the Git platform publishes them to each environment's workspace
+  with environment-specific parameters and manual approvals. This is the code-first option that
+  Microsoft's Fabric CI/CD guidance recommends.
+options:
+  - value: git_fabric_cicd
+    label: Git with fabric-cicd
+    description: Item definitions in Git are published to workspaces by the fabric-cicd Python library, run from a pipeline.
+    tradeoff: Repeatable, reviewable releases, but you write and maintain the deployment script.
+    pros:
+      - Git is the single source of truth and every release is reproducible
+      - A parameter file swaps IDs and connections for each environment
+      - Orphan cleanup removes items that no longer exist in the branch
+      - Works with Azure Pipelines or GitHub Actions and their approval gates
+    cons:
+      - Someone has to write and maintain the deployment script
+      - Needs a service principal with the right workspace roles
+      - Unpublishing orphans can delete items if the item scope is too narrow
+    adr_context: >-
+      Git with fabric-cicd was chosen. The repository holds item definitions, and a CI pipeline
+      publishes them to each workspace using a parameter file for environment differences, with
+      manual approval before production.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/understand-best-practices-fabric-cicd
+        title: Fabric CI/CD concepts and best practices
+      - url: https://learn.microsoft.com/fabric/cicd/tutorial-fabric-cicd-azure-devops
+        title: CI/CD for Microsoft Fabric using Azure DevOps and the fabric-cicd Python package
+      - url: https://learn.microsoft.com/fabric/cicd/manage-deployment
+        title: Choose the best Fabric CI/CD workflow option for you
+  - value: deployment_pipelines
+    label: Deployment pipelines
+    description: Fabric's built-in stages copy items from one stage workspace to the next with a few clicks or an API call.
+    tradeoff: Easy to start and visual, but promotion happens between workspaces rather than from Git.
+    pros:
+      - Two to ten stages, with three as the default
+      - Compare stages and see what changed before you deploy
+      - Deployment rules rebind data sources and parameters per stage
+      - Can be driven from an API in an Azure or GitHub pipeline
+    cons:
+      - Needs a separate workspace for each stage
+      - Git connects only to the first stage, so later stages aren't built from the repository
+      - Data isn't copied, so semantic models need a refresh after deployment
+    adr_context: >-
+      Fabric deployment pipelines were chosen to promote items between development, test and
+      production workspaces. The team prefers a managed, visual flow with stage comparison, and
+      accepts that production is promoted from the test stage rather than from Git.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/cicd/deployment-pipelines/intro-to-deployment-pipelines
+        title: Introduction to deployment pipelines
+      - url: https://learn.microsoft.com/fabric/cicd/manage-deployment
+        title: Choose the best Fabric CI/CD workflow option for you
+      - url: https://learn.microsoft.com/fabric/cicd/deployment-pipelines/understand-the-deployment-process
+        title: The deployment pipelines process
+  - value: manual
+    label: Manual promotion
+    description: People recreate or export and import items in each environment by hand.
+    tradeoff: No tooling to build, but slow, inconsistent and hard to audit.
+    pros:
+      - Nothing to set up or maintain
+      - Acceptable for a pilot or a one-off build
+      - No service principals or pipeline permissions needed
+    cons:
+      - Easy to miss an item or a setting, so environments drift
+      - No record of exactly what was released
+      - Doesn't scale beyond a few items and releases
+    adr_context: >-
+      Manual promotion was chosen for now. The platform is small and releases are rare, so the
+      team accepts the risk of drift and the lack of an audit trail until automated deployment
+      is justified.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/understand-best-practices-fabric-cicd
+        title: Fabric CI/CD concepts and best practices
+rule_reasons:
+  needs_git: Git with fabric-cicd publishes from a repository. Choose Azure DevOps or GitHub in the source control decision.
+  needs_two_stages: Deployment pipelines move items between stage workspaces. Choose Dev and Prod, or Dev, Test and Prod, in the environments decision.

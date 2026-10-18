@@ -1,0 +1,90 @@
+id: orchestration
+title: Orchestration
+situation: >-
+  Something has to run loads and transformations in the right order, retry failures and raise
+  alerts. In Fabric, that can be Data Factory pipelines with a low-code designer, an Apache
+  Airflow job that runs Python DAGs, or a scheduler outside Fabric that calls it. The choice
+  decides who can read and change the workflow, and what it costs to keep it running.
+intake:
+  - Do the people who maintain workflows prefer a visual designer or Python code?
+  - Do you already run Airflow or another scheduler that must stay the control point?
+  - Do you need private networking? Airflow jobs in Fabric don't support private or virtual networks.
+recommendation_note: ''
+adr_context: >-
+  The orchestrator was chosen from the options Fabric documents: Data Factory pipelines for
+  low-code workflows, Apache Airflow jobs for code-first DAGs, and an external scheduler that
+  drives Fabric. The choice reflects the skills of the team that maintains the workflows and
+  where the control point should sit.
+options:
+  - value: fabric_pipelines
+    label: Fabric pipelines
+    description: Data Factory pipelines with a visual designer, schedules, event triggers and control flow.
+    tradeoff: Built in and low-code, but complex branching is harder to review than code.
+    pros:
+      - Schedules and triggers are built in, and no extra runtime to manage
+      - Loops and conditionals handle dependencies between steps
+      - Can run notebooks, dataflows, copy activities and dbt jobs in one flow
+      - Items are Git-integrated and can be promoted through deployment pipelines
+    cons:
+      - Large visual pipelines are hard to read and diff in a pull request
+      - Logic expressed in pipeline expressions is harder to test than Python
+      - Limited when a workflow needs custom Python operators
+    adr_context: >-
+      Fabric pipelines were chosen as the orchestrator. They are built into Fabric, the team
+      prefers a visual designer, and they run the notebooks, copy jobs and dataflows that make up
+      the workflows, with schedules and failure alerts.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-factory/data-factory-overview
+        title: What is Data Factory in Microsoft Fabric?
+      - url: https://learn.microsoft.com/fabric/data-factory/cicd-pipelines
+        title: CI/CD for pipelines in Data Factory in Microsoft Fabric
+  - value: airflow_job
+    label: Apache Airflow job
+    description: A managed Apache Airflow environment in Fabric that runs Python DAGs.
+    tradeoff: Code-first and portable DAGs, but it is in preview, bills by pool uptime and lacks private networking.
+    pros:
+      - DAGs are Python, so they get normal code review and testing
+      - Supports Git sync and Azure Key Vault as a secrets backend
+      - Supports Airflow plugins and libraries, and can run Fabric items through connections
+    cons:
+      - Still in preview
+      - Billed on pool uptime, and a custom pool that runs all day uses capacity all day
+      - Private networks and virtual networks aren't supported
+    adr_context: >-
+      Apache Airflow jobs were chosen for code-first orchestration. The team writes Python DAGs
+      and wants them in Git, and accepts that the feature is in preview and has no private
+      networking, and that pool uptime is billed against capacity.
+    maturity: preview
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/data-factory/apache-airflow-jobs-concepts
+        title: What is an Apache Airflow job?
+      - url: https://learn.microsoft.com/fabric/data-factory/pricing-apache-airflow-job
+        title: Apache Airflow job pricing for Data Factory in Microsoft Fabric
+      - url: https://learn.microsoft.com/fabric/data-factory/apache-airflow-jobs-workspace-identity
+        title: Use workspace identity to authenticate Apache Airflow jobs to Fabric services
+  - value: external_scheduler
+    label: External scheduler
+    description: A scheduler outside Fabric, such as an existing Airflow or CI/CD system, calls Fabric items by API.
+    tradeoff: Keeps one control point across systems, but Fabric run state and cost sit in two places.
+    pros:
+      - Reuses the scheduler and runbooks that operations already know
+      - Can coordinate Fabric with systems outside it
+      - Fabric items stay plain, Git-integrated items
+    cons:
+      - Needs a service principal and a tenant setting that allows API access
+      - Runs in Fabric must be monitored from the external tool as well as from Fabric
+      - You operate the scheduler, its availability and its network path into Fabric
+    adr_context: >-
+      An external scheduler was chosen as the orchestrator. Operations already run a
+      scheduler that coordinates other systems, so it triggers Fabric items through the Fabric
+      APIs using a service principal with the lowest workable workspace role.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/admin/service-admin-portal-developer
+        title: Developer tenant settings
+      - url: https://learn.microsoft.com/fabric/data-factory/apache-airflow-jobs-move-s3-data-lakehouse
+        title: Tutorial - Move data from Amazon S3 to a Microsoft Fabric lakehouse using Apache Airflow
