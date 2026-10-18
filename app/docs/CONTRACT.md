@@ -74,7 +74,8 @@ Export and import format: `{ kind, schema_version, session }`. The file is named
 
 ## 3. Rule evaluation
 
-`evaluate(topic, option, session) -> { state: 'ok' | 'blocked' | 'warn' | 'pending', reasons: string[] }`
+`evaluate(pack, topic, option, session) -> { state: 'ok' | 'blocked' | 'warn' | 'pending', reasons: string[] }`
+(`pack` is needed for the title in a pending reason). Implemented in `src/engine/rules.ts`.
 
 For each `requires` entry on the option:
 
@@ -90,7 +91,11 @@ For each `requires` entry on the option:
    - `severity: block` makes the result `blocked`, with the reason from the topic's
      `rule_reasons[reason_id]`.
    - `severity: warn` makes it `warn`, with that reason.
-4. If the referenced decision is open, parked or not yet visited, the result is `pending`,
+4. Operators apply across selection types too. On a multi-select topic, `in` and `not_in`
+   act like `any_of` and `none_of`. On a single-select topic, `any_of` and `none_of` treat
+   the value as a one-element set. A modifier key is pending until the topic that owns the
+   modifier is decided.
+5. If the referenced decision is open, parked or not yet visited, the result is `pending`,
    with the reason "Depends on <title>, not decided yet". The option stays selectable.
 
 Precedence: `blocked`, then `warn`, then `pending`, then `ok`. All reasons are shown.
@@ -152,7 +157,10 @@ is skipped when its count is 0:
 
 Context selection:
 
-- If the recommendation was followed, use the topic's `adr_context`. Followed means the
+- If the recommendation was followed, use the topic's `adr_context`. When the followed
+  default came from an `adaptive_recommendation` map and differs from the base
+  recommendation, use the chosen options' `adr_context` instead, because the topic's text
+  explains the base default. Followed means the
   chosen set equals the recommendation, or for multi-select, contains all of it.
 - Otherwise, use each chosen option's `adr_context`, joined, then the deviation sentence:
   "This departs from the suggested default (<recommended labels>). Reason recorded:
@@ -186,6 +194,7 @@ interface CanvasModel {
   locks: ('model' | 'storage' | 'all')[];
   bands: { cluster: 'platform_setup' | 'access_governance' | 'operations'; chips: string[] }[];
   footer_badges: string[];
+  undecided: string[];   // canvas parts whose topic isn't decided yet; drawn dashed
 }
 ```
 
@@ -202,6 +211,10 @@ Effects and what they do to the model:
 | `serving_lane { pattern }` | Sets `serving.pattern`. The UI draws the lane variant with that name |
 | `lock { scope }` | Adds a lock icon: `model` on the serving lane, `storage` on the Silver and Gold layers, `all` on both |
 | `footer_badge { label_id }` | Adds `pack.canvas.badge_labels[label_id]` to the footer |
+
+Source names: the source-mapper UI stores the name of each source system in
+`option_notes[<mechanism value>]`. The canvas uses that name as the label and the option
+label as `mechanism`.
 
 Chips: every decided topic whose cluster has a band adds its chosen labels, shortened to
 24 characters, to that band. Undecided parts of the canvas are drawn dashed and grey, and

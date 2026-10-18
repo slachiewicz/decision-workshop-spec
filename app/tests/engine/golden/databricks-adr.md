@@ -28,7 +28,7 @@ No landing volume was added. Every source connects directly and loads into Bronz
 
 **Decision:** Unity Catalog metric views
 
-**Context:** Shared business metrics are defined as Unity Catalog metric views, so every tool that reads them gets the same numbers. Power BI models import from a SQL warehouse for speed, and switch to DirectQuery only where data must be current within minutes.
+**Context:** Unity Catalog metric views were chosen to define shared metrics once, so dashboards, Genie and external BI tools report the same numbers.
 
 **Alternatives considered:** Power BI Import from a SQL warehouse; Power BI DirectQuery; Decide per model
 

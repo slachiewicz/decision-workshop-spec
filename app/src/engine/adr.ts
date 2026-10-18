@@ -88,7 +88,12 @@ function decidedSection(pack: Pack, session: Session, topic: Topic, rec: Decisio
   } else if (rec_values.length === 0) {
     context = chosen.map((o) => clean(o.adr_context)).join(' ');
   } else if (isFollowed(topic, rec, rec_values)) {
-    context = clean(topic.adr_context);
+    // The topic's adr_context explains the base recommendation. When an adaptive map
+    // supplied a different default, the chosen options' own context is the accurate one.
+    const isBase =
+      rec_values.length === topic.recommendation.length &&
+      rec_values.every((v) => topic.recommendation.includes(v));
+    context = isBase ? clean(topic.adr_context) : chosen.map((o) => clean(o.adr_context)).join(' ');
   } else {
     const dev = `This departs from the suggested default (${labelsOf(topic, rec_values).join('; ')}).`;
     const reason = notes ? `Reason recorded: ${sentenceEnd(clean(notes))}` : 'No reason was recorded.';
