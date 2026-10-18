@@ -211,7 +211,9 @@ src/
   be added later.
 - **Canvas:** a pure function `buildCanvas(pack, decisions) -> CanvasModel` (nodes, bands,
   badges, callouts), drawn as SVG. Each pack declares its own base layout. Topic effects are
-  typed patches applied to that layout.
+  typed patches applied to that layout. Effect types stay generic (`container_grouping`, not
+  "workspace" or "catalog"), and `pack.yaml` supplies the labels and icons, so the engine
+  never learns a platform's vocabulary.
 - **ADR:** a pure function `renderAdr(pack, session) -> markdown`. The PDF comes from a print
   stylesheet, or from a headless renderer if the PDF must look the same everywhere. Offer
   `.md` and `.docx` (pandoc-style) downloads too.
@@ -223,7 +225,6 @@ type Status = 'decided' | 'open' | 'parked';
 interface DecisionRecord {
   topic_id: string; decision_key: string; status: Status;
   chosen: string[];               // option values
-  rejected: string[]; gated: string[];  // computed at save time, for the ADR
   values: Record<string,string>;  // value_fields
   modifiers: Record<string,boolean>;
   option_notes: Record<string,string>;
@@ -240,26 +241,55 @@ interface Session {
 }
 ```
 
-Store `pack_release` in every session and keep a migration table for each pack:
-`{release, renames: {decision_key: {old_value: new_value}}}`. That way an ADR made with an
-old export still renders after the content changes.
+Rejected and ruled-out options are not stored. They are computed when the ADR is rendered,
+so they can't go stale when an earlier answer changes.
+
+Options carry three fields that the live app lacks:
+
+| Field | Purpose |
+|---|---|
+| `maturity` | `ga`, `preview`, `beta` or `gated`, printed next to the option and in the ADR |
+| `as_of` | The date the option's facts were last checked against vendor docs |
+| `sources[]` | Vendor doc URLs backing the option |
+
+Store `pack_release` in every session and keep a migration table for each pack. A release
+entry can rename a topic, rename an option value, or remove an option:
+
+```yaml
+- release: 2027.01
+  topic_renames: {old_topic_id: new_topic_id}
+  value_renames: {decision_key: {old_value: new_value}}
+  removed: {decision_key: [value]}   # records holding these become "needs review"
+```
+
+A CI diff fails when a release removes or renames an option value without a migration entry.
+That way an ADR made with an old export still renders after the content changes.
 
 ### 2.4 Engine rules
 
-1. **Gating.** An option is unavailable when any of its `requires[]` has a `decision_key`
-   whose current value is not in `in`. If that decision was never made, show a soft warning
-   ("depends on X, not decided yet") instead of blocking.
+1. **Gating.** Each `requires[]` entry names a `decision_key` and one condition:
+   - `in: [...]`: the current value is one of these (single-select decisions)
+   - `not_in: [...]`: the current value is none of these
+   - `any_of: [...]`: at least one chosen value is in the list (multi-select decisions)
+
+   Each entry also has `severity: block | warn`. A `block` makes the option unavailable and
+   shows the reason. A `warn` leaves it available with the reason shown, for combinations
+   that are redundant or risky but not impossible. If the referenced decision was never made,
+   show a soft warning ("depends on X, not decided yet") instead of blocking.
 2. **Invalidation.** When an earlier answer changes and that makes an option already chosen
    in a later topic unavailable, flag the later topic as **needs review**. Don't silently
    clear it.
 3. **Adaptive defaults.** `adaptive_recommendation.follows` picks the recommended option from
-   an earlier answer. Use it for real pairs. For example, on Databricks, `storage.engine`
-   decides the recommended `bi.storage_mode`.
+   an earlier answer. Use it for real pairs. For example, on Databricks, the BI serving
+   pattern (#15) decides the recommended query mode (#16). If the adaptive pick is gated by
+   another rule, show no recommendation and a warning, rather than recommending something the
+   team can't choose.
 4. **Sign-off.** Lock is enabled only when every `required` topic is decided, parked or
    explicitly open.
 5. **ADR context.** Use the topic-level `adr_context` only when the recommendation was
    followed. Otherwise use the chosen option's `adr_context` and add a deviation paragraph
-   that cites the team's note.
+   that cites the team's note. If there is no note, the paragraph says "The team chose X
+   over the recommended Y; no reason was recorded", so the gap is visible to readers.
 
 ### 2.5 Content authoring rules
 
@@ -272,7 +302,8 @@ old export still renders after the content changes.
   when the platform changes. Both platforms rename features often.
 - A CI lint checks:
   - every `requires.decision_key` exists
-  - every value in `in` is a real option of that decision
+  - every value in `in`, `not_in` and `any_of` is a real option of that decision
+  - every option has `maturity`, `as_of` and at least one `sources[]` URL
   - every `canvas_effect.type` is known to the pack's canvas
   - no topic is missing `adr_context`
 
@@ -281,6 +312,11 @@ old export still renders after the content changes.
 - No third-party scripts by default. If analytics is needed, use a cookieless, self-hosted
   tool behind a consent toggle, and word the landing-page claim to match.
 - If an access code is a marketing gate, say so in the code. Don't present it as security.
+- Serve a strict Content Security Policy (`script-src 'self'`), so a "nothing leaves your
+  browser" claim is enforced by the browser and not only promised.
+- Run a scheduled CI job that fetches every `sources[]` URL and flags 404s, redirects, and
+  pages whose wording now says "preview", "deprecated" or "formerly". Content drifting out of
+  date is the main maintenance cost, since both vendors rename features every few months.
 - Ship as static files (any CDN). Optionally offer a single-file offline build for clients
   who must run it air-gapped.
 
@@ -290,21 +326,22 @@ old export still renders after the content changes.
 |---|---|---|
 | 1. Schema + engine | `topic.schema.json`, rules/adr/canvas as pure modules with unit tests | Golden-file tests: a fixture session renders the expected ADR Markdown |
 | 2. Fabric pack | 29 topics, sources catalogue, canvas preset | Lint passes; a full walkthrough produces an ADR with no empty sections |
-| 3. Databricks pack | Same, from [CATALOG.md](CATALOG.md) | Lint passes; a Databricks architect reviews the pack |
+| 3. Databricks pack | Same, from [CATALOG.md](CATALOG.md) | Lint passes; golden fixtures cover the default isolation model (catalog per domain × env); a Databricks architect reviews every option against its `sources[]` |
 | 4. UI | Topic pages, source mapper, naming form, canvas, sign-off | Playwright run through all 29 topics on both packs, export checked |
-| 5. Hardening | Session migration, IndexedDB adapter, print CSS, `.md`/`.docx` export | Old-release fixture imports cleanly |
+| 5. Hardening | Session migration, IndexedDB adapter, PDF rendered by headless Chromium in CI, `.md`/`.docx` export, link-check job | Old-release fixture imports cleanly; PDF matches a golden render |
 
 ## 3. Platform packs
 
-The engine and the five-part flow are the same for both. The packs differ in four places.
+The engine and the five-part flow are the same for both. The packs differ in five places.
 
 | Aspect | Fabric pack | Databricks pack |
 |---|---|---|
-| Unit of isolation drawn on the canvas | Workspace per layer × environment | Unity Catalog catalog/schema per layer × environment, bound to workspaces |
-| Compute and cost decision | Capacity SKU + surge protection; per-user Power BI licences | Serverless vs classic compute, SQL warehouse sizing, cluster policies, budget policies |
-| Consumption surface | Power BI (Direct Lake, apps) | Databricks SQL + AI/BI dashboards and Genie, plus Power BI/Tableau over SQL warehouses |
+| Unit of isolation drawn on the canvas | Workspace per layer × environment | Unity Catalog catalog per domain × environment, schema per layer, bound to workspaces |
+| Compute and cost decision | Capacity SKU + surge protection; per-user Power BI licences | Serverless vs classic compute, SQL warehouse sizing, cluster policies, serverless usage policies |
+| Consumption surface | Power BI (Direct Lake, apps) | Databricks SQL, AI/BI dashboards and Genie Agents, plus Power BI/Tableau over SQL warehouses |
 | Governance plane | Entra groups, OneLake security, Purview labels | Unity Catalog grants, row filters / column masks / ABAC, system tables, lineage |
 | Deployment tooling | `fabric-cicd`, deployment pipelines | Databricks Asset Bundles, Terraform provider |
 
 [CATALOG.md](CATALOG.md) lists all 29 decisions side by side, with the options and
-default for each platform.
+default for each platform, plus proposed decisions 30 to 36 that the live app does not
+cover.
