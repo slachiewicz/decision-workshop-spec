@@ -1,0 +1,84 @@
+id: automation_identity
+title: Identity for automation
+situation: >-
+  Jobs, pipelines and CI/CD need an identity that does not belong to a person. Databricks service
+  principals give API-only access and can own jobs. They can authenticate with a short-lived
+  OAuth token from a client secret, or with a token from your CI system through workload
+  identity federation, which needs no Databricks secret. Personal access tokens are the legacy
+  option.
+intake:
+  - Which systems call Databricks without a person present, such as CI/CD, schedulers, BI tools or applications?
+  - Can your CI platform issue workload identity tokens, such as GitHub Actions, GitLab CI or Azure DevOps?
+  - Who rotates secrets today, and what is the policy for how long a credential may live?
+recommendation_note: ''
+adr_context: >-
+  Automation runs as service principals instead of users. Each pipeline authenticates with the
+  method recorded in this decision, and jobs that write to production run as a service
+  principal so they do not depend on one person's account.
+options:
+  - value: sp_oauth
+    label: Service principals with OAuth
+    description: Account-level service principals authenticate with short-lived OAuth tokens obtained using a client secret.
+    tradeoff: Works from anywhere and is well supported, but you must store and rotate the client secret.
+    pros:
+      - Short-lived tokens instead of long-lived personal tokens
+      - Jobs keep running when people leave
+      - Access is granted to the principal independently of any user
+    cons:
+      - Client secrets must be stored and rotated
+      - Secrets in CI systems are a leak risk
+    adr_context: >-
+      Service principals with OAuth machine-to-machine authentication were chosen for automation
+      that cannot use federation. Client secrets are kept in a secret store and rotated on a
+      schedule.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/auth/
+        title: Authorize access to Databricks resources
+      - url: https://docs.databricks.com/aws/en/admin/users-groups/service-principals
+        title: Service principals
+      - url: https://learn.microsoft.com/azure/databricks/admin/users-groups/service-principals
+        title: Service principals on Azure Databricks
+  - value: workload_identity_federation
+    label: Workload identity federation
+    description: A CI system or workload exchanges its own identity token for a Databricks OAuth token, with no Databricks secret.
+    tradeoff: Removes stored secrets, but each CI system needs a federation policy.
+    pros:
+      - No Databricks secrets to store or rotate
+      - Databricks CLI and SDKs fetch and exchange the tokens automatically
+      - Policies can be limited to one repository or project
+    cons:
+      - Needs a federation policy per service principal and CI system
+      - Works for workloads whose platform issues identity tokens
+    adr_context: >-
+      Workload identity federation was chosen for CI/CD. Pipelines authenticate as a Databricks
+      service principal with tokens issued by the CI platform, so no Databricks secret is stored.
+      On Azure, managed identities serve the same purpose for Azure-hosted automation.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/auth/oauth-federation
+        title: Authenticate access to Databricks using OAuth token federation
+      - url: https://learn.microsoft.com/azure/databricks/dev-tools/auth/azure-mi-auth
+        title: Use Azure managed identities with Azure Databricks
+  - value: user_tokens
+    label: User personal access tokens
+    description: Automation uses personal access tokens that belong to a person's workspace account.
+    tradeoff: Quick to set up, but the legacy method ties automation to one person.
+    pros:
+      - Simple to create for a quick test
+    cons:
+      - Databricks recommends OAuth instead, and calls tokens a legacy method
+      - Each token works for one workspace only, and cannot automate account-level functions
+      - Automation breaks when the user leaves
+      - A leaked token carries the person's access
+    adr_context: >-
+      User personal access tokens were accepted for limited cases that cannot yet use OAuth.
+      This is a known exception with an owner and an end date, and tokens are scoped and have a
+      short lifetime.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/auth/pat
+        title: Authenticate with Databricks personal access tokens (legacy)

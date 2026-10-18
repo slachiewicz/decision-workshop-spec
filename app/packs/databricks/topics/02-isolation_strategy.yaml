@@ -1,0 +1,95 @@
+id: isolation_strategy
+title: Isolation strategy
+situation: >-
+  In Unity Catalog the catalog is the main unit of data isolation, and schemas organise data
+  inside it. This choice sets what a catalog stands for: a domain and environment, an
+  environment, or a layer and environment. It also sets how many catalogs you create, grant
+  and bind to workspaces, and where ownership and cost can be split.
+intake:
+  - Do business domains own their data and grant access independently, or does one platform team own everything?
+  - Must production data be unreachable from dev and test workspaces, even for people who hold grants?
+  - How many domains and environments do you expect in two years, and who will own each catalog?
+recommendation_note: One catalog per domain and environment, with a schema per layer. Grants and ownership then follow domain boundaries.
+adr_context: >-
+  A catalog per domain and environment was chosen, with one schema per layer (for example
+  prod_sales.silver). Databricks treats the catalog as the primary unit of data isolation, so
+  each domain owns its catalogs, grants access to its own groups and can be charged separately.
+  Layers are schemas inside the catalog, which keeps the number of catalogs manageable.
+options:
+  - value: catalog_per_domain_env
+    label: Catalog per domain and environment
+    description: Each domain gets a catalog per environment, for example prod_sales, with one schema per layer.
+    tradeoff: Clean ownership and grants per domain, at the cost of more catalogs to create and bind.
+    pros:
+      - Domain owners control grants and ownership of their own catalogs
+      - Storage location, cost and bindings can differ per domain
+      - A domain can be bound to or removed from workspaces without touching others
+    cons:
+      - Catalogs multiply with every new domain or environment
+      - Cross-domain joins need grants in more than one catalog
+    adr_context: >-
+      A catalog per domain and environment was chosen. Domains own and grant access to their data
+      independently, and each catalog can carry its own managed storage location and workspace
+      binding. Medallion layers are schemas inside each catalog.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: catalog_per_env
+    label: Catalog per environment
+    description: One catalog per environment, for example prod, with schemas for layers and domains inside it.
+    tradeoff: Fewest catalogs and the simplest setup, but domain isolation relies on schema-level grants.
+    pros:
+      - Few catalogs to create, bind and maintain
+      - One place to look for everything in an environment
+      - Cross-domain joins stay inside one catalog
+    cons:
+      - Domains can only be separated by schema, so ownership is coarser
+      - One catalog owner or storage location covers every domain
+      - Binding to workspaces is all or nothing for the environment
+    adr_context: >-
+      A catalog per environment was chosen. The estate is small enough that one platform team
+      owns all domains, and schema-level grants give enough separation. This must be revisited if
+      domains need their own owners, storage or workspace bindings.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: catalog_per_layer_env
+    label: Catalog per layer and environment
+    description: One catalog per medallion layer and environment, for example prod_bronze, with schemas per source or domain.
+    tradeoff: Lets you grant whole layers to different teams, but domains are spread across catalogs.
+    pros:
+      - Raw data in Bronze can be locked to the ingestion team in one grant
+      - Each layer can have its own storage location and retention
+    cons:
+      - A domain's data is spread over several catalogs
+      - Three catalogs per environment before any domain is added
+      - Domain ownership and cost attribution need schema-level work
+    adr_context: >-
+      A catalog per layer and environment was chosen. Access policy differs mainly by layer, with
+      raw data restricted to the ingestion team. Domains are separated by schema inside each layer
+      catalog.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+modifiers:
+  - id: workspace_binding
+    title: Workspace-catalog binding
+    label: Bind catalogs to the workspaces that should use them
+    hint: >-
+      By default every workspace on the metastore can reach every catalog. Binding limits a
+      catalog to named workspaces, even for users who hold grants, and can make it read-only
+      there.
+    on_adr_context: >-
+      Catalogs are bound to specific workspaces. A workspace that is not bound cannot reach the
+      catalog even if a user holds a grant, so production data stays out of dev and test
+      workspaces.
+    off_adr_context: >-
+      Catalogs are not bound, so any workspace attached to the metastore can reach them and
+      Unity Catalog grants are the only control. Binding can be added later for production
+      catalogs.

@@ -1,0 +1,90 @@
+id: network_connectivity
+title: Network and private connectivity
+situation: >-
+  Three connections matter: users to the workspace, the control plane to classic compute, and
+  serverless compute to your data. Each can use public endpoints with filtering or private
+  connectivity. Private options protect against data exfiltration and satisfy strict policies.
+  They also add endpoints, DNS and subnets to run, and they cost money per endpoint and per GB.
+intake:
+  - Does policy require that no traffic to or from Databricks crosses the public internet?
+  - Do data sources such as storage accounts or databases accept only private endpoints?
+  - Will you use serverless compute, classic compute in your own network, or both?
+  - Who runs DNS and private networking, and can they support new endpoints and subnets?
+recommendation_note: ''
+adr_context: >-
+  Network connectivity was chosen to match the security policy for users, classic compute and
+  serverless compute. Each of the three connections has a documented control, and the cost and
+  operational load of private endpoints was accepted where private connectivity is required.
+options:
+  - value: public_ip_lists
+    label: Public endpoints with access controls
+    description: Users reach the workspace over the internet, limited by IP access lists or context-based ingress rules.
+    tradeoff: Least to build, but traffic uses the public internet and relies on filtering.
+    pros:
+      - No private endpoints, DNS zones or extra subnets to run
+      - Databricks recommends context-based ingress, which combines identity, request type and network source in rules
+      - Account console and workspaces can have separate allow and block lists
+    cons:
+      - Traffic still crosses the public internet
+      - IP access lists need the Enterprise tier on AWS and cannot filter private-link traffic
+      - Strict regulatory or customer policies may not accept public endpoints
+    adr_context: >-
+      Public endpoints with access controls were chosen. Access to the workspace and account
+      console is limited by context-based ingress rules, with IP access lists where they are
+      still in use. Private connectivity is not required by current policy.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/security/network/front-end/ip-access-list
+        title: Manage IP access lists
+      - url: https://docs.databricks.com/aws/en/security/network/
+        title: Networking
+  - value: private_link
+    label: Front-end and back-end Private Link
+    description: Private endpoints carry user traffic to workspaces and classic compute traffic to the control plane.
+    tradeoff: Keeps user and cluster control traffic off the internet, with more networking to build.
+    pros:
+      - Users reach the workspace and APIs through a private endpoint in your network
+      - Clusters talk to the control plane privately, with no public IPs on nodes
+      - Reduces the risk of data exfiltration
+    cons:
+      - Needs a customer-managed network (VNet injection on Azure, customer-managed VPC on AWS)
+      - Private DNS, subnets and endpoints to build and run
+      - Azure needs an extra browser authentication endpoint for single sign-on
+    adr_context: >-
+      Front-end and back-end Private Link were chosen. User traffic and classic compute traffic
+      use private endpoints, workspaces sit in a customer-managed network, and private DNS is
+      operated by the network team.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/databricks/security/network/concepts/privatelink-concepts
+        title: Private Link concepts
+      - url: https://docs.databricks.com/aws/en/security/network/classic/privatelink
+        title: Configure classic private connectivity to Databricks
+  - value: private_link_vnet_ncc
+    label: Private Link, VNet injection and serverless NCC
+    description: Adds a customer-managed network for classic compute and network connectivity configurations for serverless access.
+    tradeoff: Closes every path, including serverless to your data, with the most components to run.
+    pros:
+      - Serverless compute reaches your resources through private endpoint rules in an NCC
+      - One NCC can serve all workspaces of a business unit in a region
+      - Covers users, classic compute and serverless together
+    cons:
+      - Highest cost, with a charge per endpoint and per GB processed
+      - Private endpoint requests must be approved by each resource owner
+      - On AWS, private connectivity for serverless is documented as private preview
+    adr_context: >-
+      Complete private isolation was chosen. Classic compute runs in a customer-managed network
+      with Private Link, and serverless compute reaches data sources through network connectivity
+      configurations with approved private endpoints. Endpoint cost and approval effort were
+      accepted.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/databricks/security/network/serverless-network-security/serverless-private-link
+        title: Configure private connectivity to Azure resources
+      - url: https://learn.microsoft.com/azure/databricks/security/network/classic/vnet-inject
+        title: Deploy Azure Databricks in your Azure virtual network (VNet injection)
+      - url: https://docs.databricks.com/aws/en/security/network/serverless-network-security/
+        title: Serverless compute plane networking

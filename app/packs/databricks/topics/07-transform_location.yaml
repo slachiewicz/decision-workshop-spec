@@ -1,0 +1,57 @@
+id: transform_location
+title: Transformation location
+situation: >-
+  Transformation jobs can run in the same workspaces where people query the data, or in a
+  separate engineering workspace that is the only place allowed to write to production
+  catalogs. Separate workspaces keep ad hoc work away from production writes. They also add a
+  workspace to secure, bind and operate.
+intake:
+  - Who is allowed to write to production tables today, and how do you stop everyone else?
+  - Do analysts and engineers need different network, compute or identity settings?
+  - Can you run and monitor one more workspace per environment?
+recommendation_note: ''
+adr_context: >-
+  The location of transformation jobs was chosen to match the production write policy.
+  Production tables are written only by service principals, and the workspace layout either
+  enforces that by binding or relies on grants alone.
+options:
+  - value: colocated
+    label: Co-located with the data
+    description: Jobs and pipelines run in the same workspaces where the data is queried and developed.
+    tradeoff: Fewest workspaces to run, but production write control relies on grants alone.
+    pros:
+      - One workspace per environment to manage and monitor
+      - Developers and analysts share the same catalogs and tools
+    cons:
+      - Interactive users and production jobs share a workspace and its settings
+      - Keeping direct MODIFY on production tables limited to service principals depends on discipline
+    adr_context: >-
+      Transformations run in the same workspaces as the data. Databricks guidance to reserve
+      direct MODIFY access on production tables for service principals is enforced through grants.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: separate_engineering
+    label: Separate engineering workspace
+    description: A dedicated workspace runs production jobs. Other workspaces get read-only bindings to the production catalogs.
+    tradeoff: Strong control over who can write production data, at the cost of another workspace per environment.
+    pros:
+      - A catalog can be bound read-write to the engineering workspace and read-only elsewhere
+      - Production jobs run away from interactive work
+      - Network and identity settings can be stricter for the engineering workspace
+    cons:
+      - One more workspace to configure, secure and monitor
+      - Code and results move between workspaces, so deployment must be automated
+    adr_context: >-
+      A separate engineering workspace was chosen. Production catalogs are bound read-write to
+      the engineering workspace and read-only to other workspaces, and only service principals
+      write to them.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/workspace-catalog-binding
+        title: Workspace-catalog binding
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices

@@ -1,0 +1,99 @@
+id: cicd
+title: CI/CD
+situation: >-
+  Production workloads should be deployed by automation from a repository, not by hand in a
+  workspace. Declarative Automation Bundles, formerly Databricks Asset Bundles, describe jobs,
+  pipelines and dashboards as files. The Terraform provider manages workspaces, accounts and
+  infrastructure. You can combine both, or deploy manually.
+intake:
+  - What do you deploy today, and how long does a production release take?
+  - Who owns account, workspace and Unity Catalog infrastructure, and do they already use Terraform?
+  - Which CI system runs your pipelines, and can it use workload identity federation instead of stored secrets?
+recommendation_note: Bundles for workloads, Terraform for account, workspace and Unity Catalog infrastructure. Both run from Git in CI.
+adr_context: >-
+  Declarative Automation Bundles were chosen for workloads and the Databricks Terraform
+  provider for account, workspace and Unity Catalog infrastructure. Both are deployed from Git
+  by CI under service principals, and production is changed only through that path.
+options:
+  - value: bundles_ci
+    label: Bundles deployed by CI
+    description: Declarative Automation Bundles define jobs, pipelines and other assets, and a CI system deploys them.
+    tradeoff: Repeatable, reviewed releases, but it needs a Git repository and a CI system.
+    pros:
+      - Jobs and pipelines are versioned, reviewed and tested like application code
+      - Deployment modes separate development and production behaviour
+      - CI can authenticate with workload identity federation, with no stored Databricks secrets
+    cons:
+      - Needs a Git provider and a CI system to run the deployments
+      - Teams must learn the bundle YAML and targets
+    adr_context: >-
+      Bundles deployed by CI were chosen. Jobs, pipelines and dashboards are defined in YAML,
+      reviewed in pull requests and deployed to each target by a pipeline that authenticates as
+      a service principal.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/bundles/
+        title: What are Declarative Automation Bundles?
+      - url: https://docs.databricks.com/aws/en/dev-tools/ci-cd/
+        title: CI/CD on Databricks
+  - value: terraform_infra
+    label: Terraform for platform infrastructure
+    description: The Databricks Terraform provider manages workspaces, clusters, jobs, access and cloud resources as code.
+    tradeoff: Declarative infrastructure for the platform layer, but a second tool next to bundles.
+    pros:
+      - Provisions workspaces and the cloud resources they need
+      - Aims to cover every Databricks REST API, including account-level objects
+      - Manages clusters, jobs and data access settings as reviewed code
+    cons:
+      - Needs Terraform skills and state management
+      - Overlaps with bundles for jobs, so teams must agree where each tool stops
+    adr_context: >-
+      Terraform was chosen for account, workspace and Unity Catalog infrastructure. State is
+      stored remotely, and changes are applied from CI. Workloads stay in bundles.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/terraform
+        title: Databricks Terraform provider
+      - url: https://docs.databricks.com/aws/en/dev-tools/ci-cd/
+        title: CI/CD on Databricks
+  - value: bundles_manual
+    label: Bundles deployed by hand
+    description: Teams define assets as bundles but run the Databricks CLI deploy themselves.
+    tradeoff: Gets definitions into files without a CI system, but releases depend on whoever runs the command.
+    pros:
+      - Assets are described as code
+      - No CI system needed to start
+    cons:
+      - Deployments depend on individuals and their credentials
+      - No automated tests or approvals before a release
+    adr_context: >-
+      Bundles are deployed manually from developer machines for now. Assets are defined in
+      files, but releases are run by hand with the Databricks CLI. CI is a planned next step.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/bundles/
+        title: What are Declarative Automation Bundles?
+  - value: manual
+    label: Manual deployment
+    description: Teams create and change jobs, pipelines and permissions by hand in each workspace.
+    tradeoff: No tooling to learn, but environments drift and releases cannot be repeated.
+    pros:
+      - Nothing to set up
+      - Works for a single small workspace
+    cons:
+      - Environments drift apart over time
+      - No review trail or reliable rollback
+      - A disaster recovery site cannot be rebuilt from code
+    adr_context: >-
+      Manual deployment was chosen. Assets are changed by hand in each workspace, which is
+      accepted for the current scale and revisited before a second environment is added.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/ci-cd/
+        title: CI/CD on Databricks
+rule_reasons:
+  ci_needs_git: CI deployments of bundles run from a repository, so choose a Git provider in the source control decision first.

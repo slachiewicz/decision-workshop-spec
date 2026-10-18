@@ -1,0 +1,98 @@
+id: access_licensing
+title: User entitlements
+situation: >-
+  Databricks controls what people can do in a workspace through entitlements: Workspace access
+  for builders, Databricks SQL access for analysts, and Consumer access for people who only view
+  dashboards, Genie Agents and Apps. Entitlements need the Premium plan or above. You can also
+  share dashboards with account users who have no workspace access at all.
+intake:
+  - How many people build pipelines and notebooks, how many write SQL, and how many only view dashboards or ask Genie questions?
+  - Should dashboard viewers see the same rows as the publisher, or only the rows their own permissions allow?
+  - Do viewers need to be workspace members, or can they be account users with no workspace?
+recommendation_note: ''
+adr_context: >-
+  Entitlements were assigned by role. Builders receive Workspace access, analysts receive
+  Databricks SQL access and viewers receive Consumer access, assigned through account groups
+  rather than individual users. Dashboards shared outside the workspace use the data-permission
+  setting recorded with this decision.
+options:
+  - value: workspace_access
+    label: Workspace access (builders)
+    description: Access to core workspace features such as notebooks, jobs, models and pipelines.
+    tradeoff: The entitlement for the people who build, so keep the group small.
+    pros:
+      - Lets engineers and scientists use notebooks, jobs and pipelines
+      - Can read and write data science and engineering objects
+    cons:
+      - Grants the most capability, so it should not be the default for viewers
+      - A user needs at least one access entitlement to enter the workspace
+    adr_context: >-
+      Workspace access was assigned to data engineers and scientists. It is granted through an
+      account-level group, and viewers do not receive it.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/security/auth/entitlements
+        title: Manage entitlements
+  - value: sql_access
+    label: Databricks SQL access (analysts)
+    description: Access to Databricks SQL features, including dashboards, queries and SQL warehouses.
+    tradeoff: Right for analysts who write SQL, without giving them notebooks or jobs.
+    pros:
+      - Read and write Databricks SQL objects
+      - Can query SQL warehouses from BI tools
+    cons:
+      - No access to data engineering objects such as notebooks and jobs
+      - Grants more than viewers need, so keep it to people who write SQL
+    adr_context: >-
+      Databricks SQL access was assigned to analysts. They write queries and dashboards on SQL
+      warehouses and do not get notebook or job access.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/security/auth/entitlements
+        title: Manage entitlements
+  - value: consumer_access
+    label: Consumer access (dashboard and Genie users)
+    description: A simplified workspace view for running shared dashboards, Genie Agents and Databricks Apps.
+    tradeoff: Fits viewers well and keeps them out of build tools, but they cannot create or edit anything.
+    pros:
+      - View-only access without a special licence
+      - Can run shared dashboards, Genie Agents and Apps
+      - Can query SQL warehouses through BI tools
+    cons:
+      - Cannot create or edit dashboards or change sharing settings
+      - Account admins should set budgets and rate limits before consumer traffic grows
+    adr_context: >-
+      Consumer access was assigned to business users who view dashboards and ask Genie
+      questions. They cannot create or edit assets, and rate limits and budgets are set before
+      usage grows.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/security/auth/entitlements
+        title: Manage entitlements
+      - url: https://docs.databricks.com/aws/en/dashboards/share/share
+        title: Share a dashboard
+  - value: account_dashboard_sharing
+    label: Dashboard sharing to account users
+    description: Share published dashboards with account users who are not members of the workspace.
+    tradeoff: Widest reach with no workspace seat, but the default setting runs queries with the publisher's data access.
+    pros:
+      - Viewers need an account identity but no workspace membership
+      - Individual data permission mode applies each viewer's own access
+    cons:
+      - The default shared mode runs queries with the publisher's permissions and can expose data to people without direct access
+      - Queries always use the publisher's credentials to reach compute
+      - Account users cannot see Genie Agents or Apps shared in the workspace
+    adr_context: >-
+      Dashboards are shared with account users who have no workspace access. Dashboards use
+      individual data permissions where viewers must only see what they are entitled to, and
+      shared data permissions only for content the publisher is allowed to expose.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dashboards/share/share
+        title: Share a dashboard
+      - url: https://docs.databricks.com/aws/en/security/auth/entitlements
+        title: Manage entitlements

@@ -1,0 +1,85 @@
+id: platform_centralization
+title: Platform centralisation
+situation: >-
+  A platform can run as one team with one set of catalogs, as a central backbone with domain
+  teams owning their own catalogs, or as domains that run separate deployments and share data
+  with each other. The choice decides who builds shared layers, who grants access, and how
+  data moves between domains. A metastore covers one region, so sharing also crosses that line.
+intake:
+  - Which team builds and operates the shared ingestion and conformed layers today?
+  - Do domain teams have engineers who can own their own pipelines and grants?
+  - Must some domains run on separate metastores or accounts, for regulatory or organisational reasons?
+recommendation_note: A central backbone plus domain catalogs keeps one governance model while domains own their data.
+adr_context: >-
+  A central backbone with domain catalogs was chosen. The platform team owns ingestion,
+  conformed layers and shared standards, and each domain owns its catalogs, grants and pipelines
+  within one metastore. Governance stays in one place without making the platform team a
+  bottleneck for domain work.
+value_field_labels:
+  platform_owner:
+    label: Platform owner
+    hint: The team or role that runs the backbone, for example Data Platform Engineering.
+options:
+  - value: backbone_domain_catalogs
+    label: Central backbone and domain catalogs
+    description: A platform team runs shared ingestion and standards. Domains own their catalogs on the same metastore.
+    tradeoff: Shared governance with domain ownership, but it needs clear rules about who owns what.
+    pros:
+      - One metastore and one set of groups, so grants and lineage stay in one place
+      - Domains own their catalogs, with ownership or MANAGE given to a group
+      - The platform team keeps shared layers consistent
+    cons:
+      - Needs agreed boundaries between backbone and domain work
+      - Domains share the metastore and the platform team's release pace
+    adr_context: >-
+      The platform team owns the backbone and each domain owns its catalogs on a shared
+      metastore. Ownership of catalogs and schemas is assigned to groups, as recommended in the
+      Unity Catalog best practices.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: fully_centralized
+    label: Fully centralised
+    description: One team builds and owns every pipeline and catalog, usually with one catalog per environment.
+    tradeoff: Simplest to govern, but every change queues behind one team.
+    pros:
+      - Single owner for standards, quality and cost
+      - Fewest catalogs, groups and grants to manage
+    cons:
+      - The central team becomes the bottleneck as domains grow
+      - Domain knowledge sits outside the team that builds the data
+    adr_context: >-
+      A fully centralised model was chosen. One platform team builds and owns all pipelines and
+      catalogs. This suits the current size and must be revisited if domains need to move on
+      their own schedule.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: federated_sharing
+    label: Federated domains with sharing
+    description: Domains run their own metastores and share data with each other using OpenSharing (formerly Delta Sharing).
+    tradeoff: Strong autonomy, but sharing replaces direct joins and each domain runs its own governance.
+    pros:
+      - Each domain controls its metastore, workspaces and release pace
+      - Shares are governed, with auditing and usage tracking for provider and recipient
+    cons:
+      - Consumers query shared data as a read-only catalog, not tables they own
+      - Groups, policies and lineage are managed once per deployment
+      - More deployments to secure, monitor and pay for
+    adr_context: >-
+      Federated domains were chosen. Each domain runs its own metastore and shares data to other
+      domains through OpenSharing, using the Databricks-to-Databricks protocol where both sides
+      have Unity Catalog workspaces. Domains accept separate governance in exchange for autonomy.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/opensharing
+        title: What is OpenSharing?
+      - url: https://docs.databricks.com/aws/en/opensharing/read-data-databricks
+        title: Read data shared using Databricks-to-Databricks OpenSharing
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices

@@ -1,0 +1,89 @@
+id: backup_restore
+title: Backup and restore
+situation: >-
+  People drop tables, run bad updates and delete rows. Delta tables keep history for time
+  travel, and dropped tables can be recovered for a limited period, but Databricks says table
+  history is not a long-term backup. A real backup is an independent copy, such as a deep
+  clone, which also helps with regional disaster recovery. This decision covers recovery from
+  mistakes, not from a regional outage.
+intake:
+  - How far back must you be able to restore a table after a bad write or an accidental drop?
+  - Do rules require an independent copy of the data that survives deletion of the original table?
+  - Which tables are worth the storage cost of longer retention or a second copy?
+recommendation_note: ''
+adr_context: >-
+  Recovery from mistakes was designed around the restore window the business needs. Time
+  travel and UNDROP cover recent errors, and independent copies are kept for tables where the
+  window is longer or where an independent copy is required.
+options:
+  - value: time_travel_defaults
+    label: Time travel and UNDROP defaults
+    description: Keep the default history and drop-recovery settings. Restore with time travel or UNDROP.
+    tradeoff: No extra storage or work, but the recovery window is short and not a backup.
+    pros:
+      - Nothing extra to build or pay for
+      - Time travel queries show a table as it was before a recent bad write
+      - UNDROP recovers a dropped Unity Catalog table within its recovery period
+    cons:
+      - Time travel is reliable for about the last 7 days with default settings
+      - VACUUM removes the files needed for older versions
+      - Databricks says table history should not serve as a long-term backup
+    adr_context: >-
+      The default time travel and UNDROP settings were chosen. Recent mistakes are repaired from
+      table history, and dropped tables are recovered within the default recovery period. No
+      longer-term backup is kept, which the business accepted.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/tables/history
+        title: Work with table history
+      - url: https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-undrop-table
+        title: UNDROP
+  - value: extended_retention_undrop
+    label: Extended retention and UNDROP window
+    description: Raise log and deleted-file retention on key tables and lengthen the drop-recovery period.
+    tradeoff: Longer in-place recovery for chosen tables, paid for with storage and still not an independent backup.
+    pros:
+      - Restore points reach back as far as the retention you set
+      - The UNDROP recovery period can be set per catalog or schema
+      - No second copy to manage
+    cons:
+      - Old files stay in storage, so storage cost grows with retention
+      - It is still the same table, so deleting it or its storage loses everything
+      - UNDROP does not restore primary and foreign key constraints
+    adr_context: >-
+      Longer retention was set on tables that need a wider restore window, together with a longer
+      UNDROP recovery period at catalog or schema level. Storage growth is monitored, and this is
+      not treated as a substitute for an independent backup.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/tables/history
+        title: Work with table history
+      - url: https://docs.databricks.com/aws/en/tables/operations/vacuum
+        title: Remove unused data files with vacuum
+      - url: https://docs.databricks.com/aws/en/sql/language-manual/sql-ref-syntax-ddl-undrop-table
+        title: UNDROP
+  - value: deep_clone_backups
+    label: Deep clone backups
+    description: Scheduled deep clones create independent copies of key tables, in another catalog or storage location.
+    tradeoff: A true independent copy, at the cost of storage, compute and a schedule to run.
+    pros:
+      - Copies data and metadata, so the clone does not depend on the source files
+      - Survives deletion or corruption of the source table
+      - The same approach supports cross-region recovery
+    cons:
+      - Doubles storage for cloned tables, and the clone job costs compute
+      - Table history, descriptions and Unity Catalog tags are not copied
+      - Streaming tables and materialized views cannot be cloned
+    adr_context: >-
+      Scheduled deep clones were chosen for key tables. Independent copies are written to a
+      separate catalog or storage location on a schedule matched to the recovery point the
+      business accepted, and restore from a clone is rehearsed.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/tables/operations/clone
+        title: Clone a table on Databricks
+      - url: https://docs.databricks.com/aws/en/tables/history
+        title: Work with table history

@@ -1,0 +1,78 @@
+id: environments
+title: Environments
+situation: >-
+  Changes should be tested before they reach production data. On Databricks an environment is
+  usually a set of catalogs, optionally with its own workspaces, and deployment tools such as
+  bundles promote code between them. More environments give safer releases and more catalogs,
+  jobs and workspaces to maintain.
+intake:
+  - Who tests a change before production, and against what data?
+  - Do regulations or contracts forbid test and development work on production data?
+  - How long does a release take today, and could the team keep up with a third environment?
+recommendation_note: Dev, test and prod. Each environment is a separate set of catalogs, and workspaces can be split as well.
+adr_context: >-
+  Development, test and production environments were chosen. Each environment has its own
+  catalogs, and code is promoted between them through bundle targets. Production changes are
+  deployed by automation only, so every release has passed through test.
+options:
+  - value: single_env
+    label: Production only
+    description: One environment, production. Development and testing happen against the same catalogs.
+    tradeoff: Least to maintain, but every mistake reaches production data.
+    pros:
+      - One set of catalogs, jobs and workspaces
+      - Fastest way to start
+    cons:
+      - No safe place to test a change
+      - Developers need access to production data
+      - Rollback means repairing live tables
+    adr_context: >-
+      A single production environment was chosen for the current scope. Changes are made in
+      production, so access and review rules compensate for the missing test environment.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: dev_prod
+    label: Dev and prod
+    description: A development environment for building and a production environment for released work.
+    tradeoff: Separates building from running with little overhead, but nothing sits between a change and production.
+    pros:
+      - Production data stays out of day-to-day development
+      - Bundle development mode prefixes resources and pauses schedules for safe iteration
+    cons:
+      - No staging step to test a release against production-like data
+      - Dev data may not resemble production
+    adr_context: >-
+      Development and production environments were chosen. Developers work in dev catalogs, and
+      bundle targets deploy released code to production, with development mode keeping
+      development runs from colliding with production resources.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/bundles/deployment-modes
+        title: Declarative Automation Bundles deployment modes
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: dev_test_prod
+    label: Dev, test and prod
+    description: Development, a test environment for validation, and production, each with its own catalogs.
+    tradeoff: Safest promotion path, with three of everything to keep in step.
+    pros:
+      - Releases are validated in test before production
+      - Catalogs can be bound to workspaces per environment
+      - Matches common CI/CD flows for bundles
+    cons:
+      - Three sets of catalogs, jobs and permissions
+      - Test needs realistic data that is safe to hold
+    adr_context: >-
+      Development, test and production were chosen. Each has its own catalogs, optionally bound
+      to its own workspaces, and code is promoted between them by bundle targets in CI/CD.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/bundles/deployment-modes
+        title: Declarative Automation Bundles deployment modes
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/workspace-catalog-binding
+        title: Workspace-catalog binding

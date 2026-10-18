@@ -1,0 +1,81 @@
+id: table_format
+title: Table format
+situation: >-
+  Unity Catalog managed tables can use Delta Lake or Apache Iceberg. Delta tables can also be
+  made readable by Iceberg clients without a second copy of the data. The choice decides which
+  external engines can read your tables, what maintenance Databricks does for you, and which
+  limits apply.
+intake:
+  - Which engines outside Databricks need to read these tables, and can they use a Delta or an Iceberg reader?
+  - Are those engines able to call the Iceberg REST catalog that Unity Catalog exposes?
+  - Do you need to write to the tables from engines other than Databricks?
+recommendation_note: Delta is the default for Unity Catalog tables. Turn on Iceberg reads or use Iceberg tables only for engines that need them.
+adr_context: >-
+  Delta Lake was chosen as the table format. It is the default for Unity Catalog managed
+  tables and has the broadest feature support on the platform. External engines that need
+  Iceberg are handled case by case.
+options:
+  - value: delta
+    label: Delta Lake
+    description: Delta Lake tables, the default table format in Unity Catalog.
+    tradeoff: Broadest platform feature support, but external engines need a Delta reader.
+    pros:
+      - Default for managed tables, with automatic optimisation features
+      - No extra metadata generation or protocol restrictions
+      - Open format that Delta clients can read
+    cons:
+      - Engines that read only Iceberg cannot use the tables directly
+    adr_context: >-
+      Delta Lake was chosen for all tables. It is the default Unity Catalog table format, and no
+      consumer currently requires Iceberg.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/delta/
+        title: What is Delta Lake in Databricks?
+      - url: https://docs.databricks.com/aws/en/tables/managed
+        title: Unity Catalog managed tables for Delta Lake and Apache Iceberg
+  - value: delta_uniform
+    label: Delta with Iceberg reads (UniForm)
+    description: Delta tables that also generate Iceberg metadata, so Iceberg clients read the same data files.
+    tradeoff: One copy of the data for both reader types, with write-protocol restrictions on the table.
+    pros:
+      - A single copy of the data files serves Delta and Iceberg readers
+      - Works for managed and external Delta tables in Unity Catalog
+    cons:
+      - Needs column mapping and Databricks Runtime 14.3 LTS or above for writes
+      - Iceberg metadata is generated asynchronously, which adds driver load
+      - Cannot be combined with deletion vectors
+      - Enabling it upgrades the writer protocol, which can affect external Delta writers
+    adr_context: >-
+      Delta with Iceberg reads was chosen so that Iceberg clients can read selected tables from
+      the same data files. Column mapping is enabled, and external Delta writers were checked
+      for compatibility with the upgraded writer protocol.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/delta/iceberg-reads
+        title: Read Delta Lake tables with Iceberg clients
+  - value: managed_iceberg
+    label: Managed Iceberg
+    description: Unity Catalog managed tables stored in Apache Iceberg format, readable and writable through the Iceberg REST catalog.
+    tradeoff: Native for Iceberg-first engines, with Databricks-managed maintenance and some feature limits.
+    pros:
+      - External Iceberg engines can read and write through the Iceberg REST Catalog API
+      - Unity Catalog handles snapshot expiry and file compaction
+      - Liquid clustering and predictive optimization apply
+    cons:
+      - Needs Databricks Runtime 16.4 LTS or above and serverless compute for metadata maintenance
+      - External engines cannot read Unity Catalog views
+      - Credential vending is not supported on workspaces that use default storage
+    adr_context: >-
+      Managed Iceberg tables were chosen because external engines need to read and write the
+      tables through the Iceberg REST catalog. Unity Catalog manages snapshots and compaction,
+      and serverless compute can reach the table storage.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/iceberg/
+        title: What is Apache Iceberg in Databricks?
+      - url: https://docs.databricks.com/aws/en/tables/managed
+        title: Unity Catalog managed tables for Delta Lake and Apache Iceberg

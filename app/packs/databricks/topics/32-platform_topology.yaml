@@ -1,0 +1,80 @@
+id: platform_topology
+title: Account and workspace topology
+situation: >-
+  One Databricks account holds one Unity Catalog metastore per region, and every workspace in
+  that region shares it. Workspaces are processing environments, and catalogs are data
+  domains. How many workspaces you create decides where compute, network and identity settings
+  can differ, and whether catalog binding can keep environments apart.
+intake:
+  - Do dev, test and prod need different network, compute or admin settings?
+  - Do domains need their own workspace admins, quotas or cost reports?
+  - How many workspaces can the platform team create, secure and monitor?
+recommendation_note: ''
+adr_context: >-
+  The workspace layout was chosen on top of one metastore per region. Workspaces separate
+  processing environments, catalogs separate data, and workspace-catalog binding connects the
+  two where an environment must be kept apart.
+options:
+  - value: workspace_per_env
+    label: Workspace per environment
+    description: One workspace each for dev, test and prod, sharing the regional metastore, with catalogs bound to match.
+    tradeoff: A clear production boundary with few workspaces, but all domains share each workspace.
+    pros:
+      - Production catalogs can be bound to the production workspace only
+      - Separate network, compute and admin settings per environment
+      - Few workspaces to run
+    cons:
+      - Domains share a workspace, so admin settings and quotas are shared
+      - Domain cost needs tags or usage policies, not a workspace boundary
+    adr_context: >-
+      One workspace per environment was chosen. Production catalogs are bound to the production
+      workspace, and domains are separated by catalog and group inside each workspace.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/workspace-catalog-binding
+        title: Workspace-catalog binding
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: workspace_per_domain_env
+    label: Workspace per domain and environment
+    description: Each domain gets its own workspace per environment, all attached to the same regional metastore.
+    tradeoff: Full autonomy for each domain, with many workspaces to create and maintain.
+    pros:
+      - Domains have their own admins, settings and cost boundary
+      - Catalogs can be bound per domain workspace
+    cons:
+      - Workspaces multiply with domains and environments
+      - Shared standards and networking must be repeated or automated for each
+      - Cross-domain access needs bindings to be kept in step
+    adr_context: >-
+      A workspace per domain and environment was chosen. Each domain administers its own
+      workspaces on the shared metastore, and catalogs are bound to the workspaces that need
+      them. Workspace creation is automated.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/workspace-catalog-binding
+        title: Workspace-catalog binding
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+  - value: single_workspace
+    label: Single workspace
+    description: One workspace per region for everything, with isolation by catalog and group only.
+    tradeoff: The least to operate, with no workspace boundary between environments.
+    pros:
+      - One workspace to secure, monitor and pay attention to
+      - No cross-workspace bindings
+    cons:
+      - Dev, test and prod share network, compute and admin settings
+      - Catalog binding cannot keep production away from developer compute
+      - A misconfigured grant exposes production directly
+    adr_context: >-
+      A single workspace per region was chosen. Environments and domains are separated by
+      catalogs, groups and grants only. This is acceptable for the current scale and should be
+      revisited when production needs a hard boundary.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices

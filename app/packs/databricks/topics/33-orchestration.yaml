@@ -1,0 +1,78 @@
+id: orchestration
+title: Orchestration
+situation: >-
+  Something has to decide when each pipeline runs, in what order, and what happens when a step
+  fails. Lakeflow Jobs does this inside Databricks, with time-based and event-based triggers,
+  branching and alerts. An external orchestrator such as Apache Airflow is worth it when
+  workflows span many systems outside Databricks.
+intake:
+  - Do workflows touch many systems outside Databricks, or mostly Databricks tasks?
+  - Does your organisation already run an orchestrator, and who operates it?
+  - Which triggers do you need, for example schedules, file arrival, upstream completion or external events?
+recommendation_note: ''
+adr_context: >-
+  The orchestrator was chosen based on where workflows run. Workflows that stay inside
+  Databricks run as Lakeflow Jobs. Where an external scheduler is used, it triggers Databricks
+  jobs through the API and does not duplicate task logic.
+options:
+  - value: lakeflow_jobs
+    label: Lakeflow Jobs
+    description: Databricks-native orchestration of notebooks, pipelines, SQL and other tasks, with triggers and alerts.
+    tradeoff: Nothing extra to run and fully integrated, but it orchestrates Databricks work best.
+    pros:
+      - Tasks form a DAG with branching and for-each loops
+      - Triggers can be time-based or event-based, such as file arrival
+      - Run history, alerts and system tables are built in
+    cons:
+      - Less suited to workflows that mostly run outside Databricks
+      - A workspace is limited to 2000 concurrent task runs
+    adr_context: >-
+      Lakeflow Jobs were chosen for orchestration. Pipelines, notebooks and SQL tasks run as
+      jobs with triggers and alerts, and run history is queried through system tables.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/jobs/
+        title: Lakeflow Jobs
+  - value: external_airflow
+    label: Apache Airflow
+    description: Airflow DAGs trigger and monitor Databricks jobs through the open source Databricks provider.
+    tradeoff: One scheduler across many systems, but another platform to operate, and the provider is not Databricks-supported.
+    pros:
+      - Orchestrates Databricks and non-Databricks tasks in one DAG
+      - DatabricksRunNowOperator triggers an existing job without duplicating its definition
+    cons:
+      - The provider packages are open source and not directly supported by Databricks
+      - Airflow needs its own infrastructure, upgrades and monitoring
+      - Airflow needs Databricks credentials, which should be a service principal
+    adr_context: >-
+      Apache Airflow was chosen to orchestrate workflows across systems. DAGs trigger existing
+      Databricks jobs with the run-now operator under a service principal. Task logic stays in
+      Databricks jobs.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/jobs/how-to/use-airflow-with-jobs
+        title: Orchestrate Lakeflow Jobs with Apache Airflow
+      - url: https://docs.databricks.com/aws/en/dev-tools/ci-cd/
+        title: CI/CD on Databricks
+  - value: external_scheduler
+    label: Another external scheduler
+    description: An existing enterprise scheduler or CI system starts Databricks jobs through the API or CLI.
+    tradeoff: Reuses what the organisation runs, but you lose some native monitoring and triggers.
+    pros:
+      - Fits an existing operations process and on-call team
+      - One place to see all scheduled work
+    cons:
+      - Triggers and dependencies are managed outside Databricks
+      - You must wire alerts and failure handling to the scheduler
+    adr_context: >-
+      An existing external scheduler was chosen. It starts Databricks jobs through the API under a
+      service principal, and Databricks job alerts are kept as a second signal.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/jobs/
+        title: Lakeflow Jobs
+      - url: https://docs.databricks.com/aws/en/dev-tools/ci-cd/
+        title: CI/CD on Databricks

@@ -1,0 +1,165 @@
+id: ingestion
+title: Ingestion
+situation: >-
+  Databricks offers several ways to bring data in: managed connectors, file ingestion, queries
+  against the source in place, inbound shares, your own code, streaming, and partner tools.
+  Databricks advises starting with the most managed layer that supports the source and moving
+  down only when it does not. Most estates use more than one mechanism, one per source.
+intake:
+  - What are the source systems, and which are SaaS applications, databases, files, event streams or shares from other organisations?
+  - How fresh must each source be in Bronze, for example daily, hourly or within seconds?
+  - Which sources need change data capture, and which can be read in full or queried in place?
+  - Does the team already pay for a partner ingestion tool that you must keep?
+recommendation_note: ''
+adr_context: >-
+  Ingestion mechanisms were chosen per source, starting with the most managed option that
+  supports each one. Managed connectors cover supported SaaS and database sources, Auto Loader
+  covers files in cloud storage, and custom code covers the rest. The mapping of sources to
+  mechanisms is recorded with this decision.
+options:
+  - value: lakeflow_connect
+    label: Lakeflow Connect managed connectors
+    description: Managed connectors for SaaS applications, databases (with change data capture), files and some streaming sources.
+    tradeoff: Least code and automatic schema handling, but only for the sources and release states supported.
+    pros:
+      - Handles source authentication, retries and schema evolution for you
+      - Database connectors use change data capture
+      - Runs on serverless compute by default and is governed by Unity Catalog
+    cons:
+      - Connectors are in different release states, so each one needs checking
+      - Limited control over how and when data is read
+    adr_context: >-
+      Lakeflow Connect managed connectors were chosen for the sources they support. They take
+      over authentication, incremental reads and schema changes, and write to streaming tables
+      governed by Unity Catalog. Connectors in preview are listed with their release state.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/
+        title: Lakeflow Connect connector concepts
+      - url: https://docs.databricks.com/aws/en/ingestion/
+        title: Ingest with SQL and Spark APIs
+  - value: auto_loader
+    label: Auto Loader
+    description: Incremental loading of new files from cloud storage or Unity Catalog volumes into tables.
+    tradeoff: Reliable and cheap for file drops, but only for files and not for databases or APIs.
+    pros:
+      - Tracks which files it has processed, so each file is loaded once
+      - Reads JSON, CSV, XML, Parquet, Avro, ORC, text and binary files
+      - Works inside Lakeflow pipelines, which set schema and checkpoint locations for you
+    cons:
+      - Covers files only
+      - Needs a landing location that sources can write to
+    adr_context: >-
+      Auto Loader was chosen for file-based sources. New files in cloud storage or a Unity
+      Catalog volume are loaded incrementally into Bronze tables, using a Lakeflow pipeline so
+      that schema and checkpoint locations are managed.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/
+        title: What is Auto Loader?
+  - value: lakehouse_federation
+    label: Lakehouse Federation
+    description: Query external databases and catalogs in place through Unity Catalog foreign catalogs, without copying data.
+    tradeoff: No pipeline to build, but queries are read-only and depend on the source system.
+    pros:
+      - Governed by Unity Catalog like any other catalog
+      - Good for ad hoc reporting and proof-of-concept access to operational databases
+      - Catalog federation reads external catalogs' data directly from object storage
+    cons:
+      - Access is read-only, so nothing can be written back to the source
+      - Query federation pushes work to the source database, which adds load there
+      - Data stays outside Bronze, so history and replay are not under your control
+    adr_context: >-
+      Lakehouse Federation was chosen for sources that should be queried in place. Foreign
+      catalogs give read-only, Unity Catalog governed access without copying data. Sources that
+      need history or replay are loaded into Bronze instead.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/query-federation/
+        title: Connect to external databases and catalogs
+  - value: delta_sharing_inbound
+    label: Inbound shares (OpenSharing)
+    description: Read tables and files that another party shares with you through OpenSharing (formerly Delta Sharing).
+    tradeoff: Live access to a partner's data without copying, but you depend on the provider's schedule and schema.
+    pros:
+      - Shared updates appear in your workspace in near real time
+      - No credentials file when both sides use Unity Catalog workspaces
+      - Shared data is read through a catalog you grant like any other
+    cons:
+      - Read-only, and the provider decides what is shared
+      - Recipients without Unity Catalog workspaces need token-based access
+    adr_context: >-
+      Inbound shares were chosen for sources that another party publishes. Data is read through
+      OpenSharing as a shared catalog and is not copied, unless Bronze needs its own history of
+      the shared tables.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/opensharing
+        title: What is OpenSharing?
+      - url: https://docs.databricks.com/aws/en/opensharing/read-data-databricks
+        title: Read data shared using Databricks-to-Databricks OpenSharing
+  - value: custom_jobs
+    label: Custom notebooks and jobs
+    description: Your own Python or SQL code in Lakeflow Jobs pulls from APIs and other sources not covered elsewhere.
+    tradeoff: Works for any source, but you own retries, schema changes and maintenance.
+    pros:
+      - Handles APIs and formats no connector covers
+      - Full control over timing, batching and error handling
+    cons:
+      - You write and maintain authentication, retries and incremental logic
+      - Quality varies by author unless the team sets standards
+    adr_context: >-
+      Custom notebooks and jobs were chosen for sources that no managed connector covers. Code is
+      kept in Git, runs as a Lakeflow Job under a service principal, and writes to Bronze tables.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/jobs/
+        title: Lakeflow Jobs
+      - url: https://docs.databricks.com/aws/en/ingestion/
+        title: Ingest with SQL and Spark APIs
+  - value: structured_streaming
+    label: Structured Streaming and message buses
+    description: Spark streaming reads from Kafka, Kinesis, Pub/Sub, Event Hubs or Pulsar with exactly-once processing.
+    tradeoff: Lowest latency and most control, at the cost of operating streaming state and checkpoints.
+    pros:
+      - Exactly-once processing with checkpoints
+      - Latency from seconds down to a few milliseconds with real-time mode
+      - Lakeflow pipelines can read the same sources with less operational work
+    cons:
+      - Stateful queries need monitoring and careful watermark and trigger settings
+      - Needs engineers who know streaming
+    adr_context: >-
+      Structured Streaming was chosen for event sources. Message-bus sources are read with Spark
+      Structured Streaming, or with Lakeflow pipelines where the managed layer is enough, with
+      checkpoints stored in Unity Catalog governed locations.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/structured-streaming/concepts
+        title: Structured Streaming concepts
+      - url: https://docs.databricks.com/aws/en/ingestion/
+        title: Ingest with SQL and Spark APIs
+  - value: partner_etl
+    label: Partner ETL tools
+    description: A third-party tool such as Fivetran loads data into Delta tables through a SQL warehouse or cluster.
+    tradeoff: Reuses an existing tool and its connectors, but adds a vendor, a licence and an access path.
+    pros:
+      - Keeps the team's existing connectors and skills
+      - Partner Connect sets up the connection from the workspace
+    cons:
+      - Separate licence and a separate tool to monitor
+      - The tool needs credentials and privileges on a catalog or schema
+    adr_context: >-
+      A partner ETL tool was chosen for sources it already covers. It loads into Unity Catalog
+      using a dedicated service principal with only the privileges it needs on the target
+      catalog.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/partners/ingestion/fivetran
+        title: Connect to Fivetran

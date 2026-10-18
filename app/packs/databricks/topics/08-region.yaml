@@ -1,0 +1,70 @@
+id: region
+title: Cloud, region and residency
+situation: >-
+  A Databricks workspace runs on one cloud in one region, and each region has one Unity Catalog
+  metastore that all its workspaces share. The region decides where data resides, which
+  features and compute types are available, and what latency users see. Running in more than
+  one region means more metastores, more workspaces, and a plan for moving data between them.
+intake:
+  - Which cloud do your storage, identity provider and other systems already use?
+  - Do laws, contracts or customers require data to stay in a specific country or region?
+  - Are any users or sources far enough from the region that latency or egress cost matters?
+  - Do you need a second region for disaster recovery or for users in another geography?
+recommendation_note: One primary region keeps a single metastore and the simplest operating model. Add regions only for residency or recovery.
+adr_context: >-
+  A single primary region was chosen. All workspaces attach to the one Unity Catalog metastore
+  for that region, so grants, lineage and sharing stay in one place. Another region can be
+  added later for disaster recovery or residency, with its own metastore.
+options:
+  - value: primary_region
+    label: One primary region
+    description: All workspaces and data run in a single cloud region, with one Unity Catalog metastore.
+    tradeoff: Simplest to run and govern, but a regional outage takes the platform down.
+    pros:
+      - One metastore, so grants, lineage and system tables are in one place
+      - Compute runs next to the data, which avoids cross-region transfer
+      - Fewer workspaces and networks to secure
+    cons:
+      - A regional outage stops the platform unless you add disaster recovery
+      - Users far from the region see more latency
+    adr_context: >-
+      A single primary region was chosen on the chosen cloud, with one Unity Catalog metastore
+      for that region. Workspaces and storage sit in the same region so that compute stays next
+      to the data.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+      - url: https://learn.microsoft.com/azure/databricks/resources/supported-regions
+        title: Azure Databricks regions
+    value_field_labels:
+      cloud:
+        label: Cloud
+        hint: Azure, AWS or Google Cloud. Names, plans and some features differ by cloud.
+      cloud_region:
+        label: Primary region
+        hint: The cloud region, for example westeurope, eu-central-1 or europe-west3.
+  - value: multi_region
+    label: More than one region
+    description: Workspaces in two or more regions, each with its own metastore, for residency, recovery or proximity.
+    tradeoff: Covers residency and regional failure, but every region adds a metastore, workspaces and data movement.
+    pros:
+      - Keeps data in each required geography
+      - Makes cross-region disaster recovery possible
+      - Puts compute closer to users in other geographies
+    cons:
+      - One metastore per region, so grants, lineage and system tables are split
+      - Data moves between regions by sharing or replication, with egress cost
+      - Some services and compute types exist only in certain regions
+    adr_context: >-
+      More than one region was chosen for residency or recovery. Each region has its own Unity
+      Catalog metastore and workspaces, and data moves between regions through OpenSharing or
+      replication. Services needed in every region were checked for regional availability.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
+        title: Unity Catalog best practices
+      - url: https://learn.microsoft.com/azure/databricks/admin/disaster-recovery
+        title: Disaster recovery for Azure Databricks

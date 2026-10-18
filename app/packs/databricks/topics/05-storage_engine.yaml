@@ -1,0 +1,79 @@
+id: storage_engine
+title: Storage engine
+situation: >-
+  Unity Catalog tables are either managed, where Databricks controls the files, layout and
+  lifecycle, or external, where the files sit in your own storage and you control them. The
+  choice decides who optimises the data, what happens on DROP TABLE, and whether tools outside
+  Databricks can read the files directly. You can pick one type for every layer or mix them.
+intake:
+  - Do tools outside Databricks need to read the data files directly, without going through Databricks?
+  - Does any data already exist in storage in a format other than Delta or Iceberg, such as JSON or Avro?
+  - Who is responsible for compaction, clustering and cleaning old files today?
+recommendation_note: Managed tables are the default Databricks recommends. Use external tables only for a specific need.
+adr_context: >-
+  Unity Catalog managed tables were chosen for all layers. Databricks manages their storage,
+  optimisation and file cleanup, and they stay readable from outside through open APIs.
+  External tables are reserved for data that must stay in formats or locations Unity Catalog
+  cannot manage.
+options:
+  - value: managed_tables
+    label: Managed tables
+    description: Unity Catalog manages storage, optimisation and lifecycle for Delta Lake and Apache Iceberg tables.
+    tradeoff: Lowest effort and cost, but files live in Unity Catalog's managed locations.
+    pros:
+      - Automatic optimisation such as compaction and statistics, with predictive optimization
+      - Data files are deleted after the recovery period when a table is dropped
+      - Stay readable from external Delta and Iceberg clients through open APIs
+    cons:
+      - Files are not meant to be read or written by path outside Unity Catalog
+      - Some features, such as predictive optimization, are on by default only for newer accounts
+    adr_context: >-
+      Managed tables were chosen for all layers. Unity Catalog owns storage, optimisation and
+      cleanup, and external engines read the tables through open APIs instead of by file path.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/tables/managed
+        title: Unity Catalog managed tables for Delta Lake and Apache Iceberg
+  - value: external_tables
+    label: External tables
+    description: Tables whose data files sit in your own cloud storage, registered through a Unity Catalog external location.
+    tradeoff: You keep direct control of the files, but you also run their layout and cleanup.
+    pros:
+      - Non-Databricks clients can read the files directly
+      - Can register existing data in formats such as JSON, CSV, Avro or ORC
+      - You choose the storage location and layout
+    cons:
+      - Unity Catalog privileges are not enforced on direct file access from other systems
+      - Dropping the table leaves the files, which you must delete yourself
+      - No automatic optimisation, so you plan compaction and cleanup
+    adr_context: >-
+      External tables were chosen for all layers. Files stay in storage the organisation
+      controls, which other systems read directly. The team accepts responsibility for file
+      layout, optimisation and deletion, and for access control on the storage itself.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/tables/external
+        title: Work with external tables
+  - value: mixed
+    label: Mixed (external Bronze, managed Silver and Gold)
+    description: Bronze is external so other systems can reach the raw files. Silver and Gold are managed.
+    tradeoff: Raw files stay open to other tools while curated layers get automatic optimisation.
+    pros:
+      - Raw landing files can be shared with tools outside Databricks
+      - Curated layers get managed optimisation and cleanup
+    cons:
+      - Two table types with different drop, access and maintenance behaviour
+      - Bronze file layout and cleanup remain your job
+    adr_context: >-
+      A mixed model was chosen. Bronze tables are external so that other systems can read the raw
+      files, and Silver and Gold are managed tables optimised by Unity Catalog. The team owns
+      file layout and cleanup for Bronze.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/tables/managed
+        title: Unity Catalog managed tables for Delta Lake and Apache Iceberg
+      - url: https://docs.databricks.com/aws/en/tables/external
+        title: Work with external tables

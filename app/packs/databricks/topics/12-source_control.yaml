@@ -1,0 +1,100 @@
+id: source_control
+title: Source control
+situation: >-
+  Code, pipeline definitions and bundle files need a home with history and review. Databricks
+  Git folders connect a workspace to a Git provider for interactive work, and CI/CD tools deploy
+  from the same repository. The provider you pick also decides how people and automation
+  authenticate to it.
+intake:
+  - Which Git provider does the organisation already license and secure?
+  - Does your security team require single sign-on, token policies or IP restrictions on the Git provider?
+  - Who reviews changes to jobs, pipelines and SQL before they reach production?
+recommendation_note: ''
+adr_context: >-
+  A Git provider was chosen as the single source of truth for code and bundle definitions.
+  Developers use Git folders for interactive work, and CI/CD deploys production from the
+  repository rather than from the workspace.
+options:
+  - value: github
+    label: GitHub
+    description: Repositories on GitHub, linked to Git folders with OAuth or a personal access token.
+    tradeoff: Common and well integrated, with GitHub Actions for Databricks available for CI/CD.
+    pros:
+      - A GitHub Action developed for Databricks is available for CI/CD
+      - Workload identity federation lets GitHub Actions authenticate without Databricks secrets
+    cons:
+      - SAML SSO organisations must authorise tokens for SSO
+      - Per-user credentials tie access to individuals unless you use a service account
+    adr_context: >-
+      GitHub was chosen. Developers link accounts to Git folders, and CI/CD authenticates to
+      Databricks as a service principal using workload identity federation instead of stored
+      secrets.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/repos/repos-setup
+        title: Configure Git integration for Git folders
+      - url: https://docs.databricks.com/aws/en/dev-tools/ci-cd/github
+        title: GitHub Actions
+      - url: https://docs.databricks.com/aws/en/dev-tools/auth/provider-github
+        title: Enable workload identity federation for GitHub Actions
+  - value: ado
+    label: Azure DevOps
+    description: Repositories on Azure DevOps, linked to Git folders, with Azure Pipelines for CI/CD.
+    tradeoff: Natural on Azure, but user Git folders need a personal access token.
+    pros:
+      - Fits Azure-centred estates with Microsoft Entra ID
+      - A Microsoft Entra service principal can be authorised to access Git folders for automation
+    cons:
+      - Git folder credentials for users must be Azure DevOps personal access tokens, not Entra ID tokens
+      - Entra service principal setup needs federated credentials in both Databricks and Entra
+    adr_context: >-
+      Azure DevOps was chosen. Users connect Git folders with personal access tokens, and
+      automation authenticates with a Microsoft Entra service principal or managed identity.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/repos/repos-setup
+        title: Configure Git integration for Git folders
+      - url: https://learn.microsoft.com/azure/databricks/repos/automate-with-ms-entra
+        title: Authorize a Microsoft Entra service principal to access Git folders
+  - value: gitlab
+    label: GitLab
+    description: Repositories on GitLab, linked to Git folders with a personal access token or OAuth.
+    tradeoff: Keeps code and CI on one platform, but the Databricks CI/CD guides focus on other tools.
+    pros:
+      - Git folders and bundles work with GitLab repositories
+      - GitLab CI/CD can use workload identity federation, so no Databricks secrets are stored
+    cons:
+      - The Databricks CI/CD guides cover GitHub Actions, Azure DevOps and Jenkins, not GitLab CI
+      - Group Git credentials should be backed by a dedicated service account
+    adr_context: >-
+      GitLab was chosen. Git folders link to GitLab repositories, and GitLab CI deploys bundles
+      using a service principal.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/repos/repos-setup
+        title: Configure Git integration for Git folders
+      - url: https://docs.databricks.com/aws/en/dev-tools/auth/provider-gitlab
+        title: Enable workload identity federation for GitLab CI/CD
+  - value: none
+    label: No Git provider
+    description: Code stays in workspace folders and is not linked to a repository.
+    tradeoff: No setup, but no review, branching or automated deployment from a repository.
+    pros:
+      - Nothing to set up or license
+    cons:
+      - No pull requests, branch history or code review outside the workspace
+      - CI/CD with bundles needs a repository, so deployments stay manual
+      - Hard to rebuild a workspace or a disaster recovery site from code
+    adr_context: >-
+      No Git provider was chosen for now. Code lives in workspace folders, and deployments are
+      manual. This is a known gap that blocks CI/CD and workspace rebuilds from code.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/dev-tools/ci-cd/
+        title: CI/CD on Databricks
+      - url: https://docs.databricks.com/aws/en/repos/repos-setup
+        title: Configure Git integration for Git folders

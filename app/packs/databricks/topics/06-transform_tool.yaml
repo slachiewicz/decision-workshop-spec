@@ -1,0 +1,100 @@
+id: transform_tool
+title: Transformation tool
+situation: >-
+  Transformations can be declared as pipelines, written as Spark code in jobs, defined as SQL
+  materialized views and streaming tables, or built as dbt models on a SQL warehouse. The tools
+  differ in how much orchestration, incremental logic and quality checking they handle for you.
+  Most teams use more than one, so you can select several.
+intake:
+  - Is the team's main skill SQL, Python or Scala, and does it already use dbt?
+  - Which transformations must be incremental or streaming, and which can be full recomputes?
+  - Do you want one tool to manage dependencies and data quality checks, or are those handled elsewhere?
+recommendation_note: ''
+adr_context: >-
+  The transformation tools were chosen by workload. Declarative tools are used where they fit
+  the pattern, and code-based tools are used where the logic needs it. Each tool's scope is
+  recorded so that one transformation is not defined in two places.
+options:
+  - value: lakeflow_pipelines
+    label: Lakeflow pipelines
+    description: Declarative pipelines in SQL or Python, formerly Delta Live Tables, with flows, streaming tables and materialized views.
+    tradeoff: Databricks handles dependencies, incremental updates and retries, but you work within its model.
+    pros:
+      - Orchestration, monitoring, data quality and error handling are built in
+      - Materialized views update incrementally where possible
+      - Tables belong to one pipeline, which avoids two jobs writing to the same table
+    cons:
+      - A table defined by one pipeline cannot be changed by another pipeline
+      - Logic must fit the declarative model
+    adr_context: >-
+      Lakeflow pipelines were chosen for declarative batch and streaming transformations. The
+      pipeline owns its tables, manages dependencies and incremental updates, and enforces data
+      quality expectations.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/ldp/
+        title: Spark Declarative Pipelines on Lakeflow
+      - url: https://docs.databricks.com/aws/en/ldp/concepts/materialized-views
+        title: Materialized views
+  - value: spark_jobs
+    label: Spark notebooks and Lakeflow Jobs
+    description: Python, Scala or SQL notebooks and scripts run as tasks in Lakeflow Jobs.
+    tradeoff: Full flexibility for any logic, with all incremental and quality handling written by you.
+    pros:
+      - Handles any transformation, including complex Python and ML preparation
+      - Tasks can branch, loop and depend on one another in one job
+    cons:
+      - You write and test the incremental, retry and quality logic
+      - Notebook code needs engineering discipline to stay reviewable
+    adr_context: >-
+      Spark notebooks and scripts in Lakeflow Jobs were chosen for logic that does not fit a
+      declarative pipeline. Code lives in Git, is tested in CI and runs as a service principal.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/jobs/
+        title: Lakeflow Jobs
+  - value: sql_materialized
+    label: SQL materialized views and streaming tables
+    description: Define Gold and Silver tables as SQL materialized views or streaming tables, refreshed on a schedule.
+    tradeoff: The simplest path for SQL teams, but you give up the extra control of a full pipeline project.
+    pros:
+      - A query is enough to define a table and keep it up to date
+      - Refreshes are often incremental
+      - Standalone views run without a separate pipeline project
+    cons:
+      - Standalone views are backed by an automatically created pipeline you do not fully control
+      - Limited fit for logic that needs procedural code
+    adr_context: >-
+      SQL materialized views and streaming tables were chosen for analyst-owned transformations.
+      A query defines each table, and Databricks refreshes it, often incrementally.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/ldp/concepts/materialized-views
+        title: Materialized views
+      - url: https://docs.databricks.com/aws/en/ldp/concepts/streaming-tables
+        title: Streaming tables
+  - value: dbt
+    label: dbt on a SQL warehouse
+    description: dbt Core or dbt Cloud models run on a Databricks SQL warehouse or cluster through the dbt-databricks adapter.
+    tradeoff: Familiar workflow for dbt teams, but dbt only transforms, and the run is orchestrated outside dbt.
+    pros:
+      - Brings version control, tests, documentation and modular SQL
+      - Works with SQL warehouses or clusters
+      - Can run as a task type in Lakeflow Jobs
+    cons:
+      - dbt only transforms, so it does not extract or load data
+      - Another toolchain, adapter version and project layout to maintain
+    adr_context: >-
+      dbt was chosen for SQL transformations. Models run on a SQL warehouse through the
+      dbt-databricks adapter, authenticate with OAuth or a service principal, and are scheduled
+      as Lakeflow Jobs tasks.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/partners/prep/dbt
+        title: Connect to dbt Core
+      - url: https://docs.databricks.com/aws/en/jobs/run-serverless-jobs
+        title: Run your Lakeflow Jobs with serverless compute for workflows

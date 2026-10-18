@@ -1,0 +1,131 @@
+id: compute_strategy
+title: Compute strategy
+situation: >-
+  Databricks compute is either serverless, managed by Databricks and started in seconds, or
+  classic, deployed in your cloud account and configured by you. You choose per workload type:
+  jobs, SQL warehouses, notebooks and shared clusters. The mix decides how much infrastructure
+  you manage, what network controls apply, and how you attribute cost.
+intake:
+  - Do any workloads need custom images, init scripts, specific instance types or libraries that serverless does not support?
+  - Do security rules require compute inside your own virtual network and subnets?
+  - Which workloads run on a fixed schedule, and which are interactive or bursty?
+  - How will you attribute compute cost to teams, with tags on classic compute or usage policies on serverless?
+recommendation_note: Serverless for jobs, SQL and notebooks. Add classic compute only for workloads serverless cannot run.
+adr_context: >-
+  Serverless compute was chosen for jobs, SQL warehouses and notebooks. Databricks manages
+  scaling, runtime upgrades and optimisation, and no cluster creation permission is needed.
+  Classic compute is limited to workloads that serverless does not support, and is governed by
+  compute policies.
+value_field_labels:
+  sql_warehouse_size:
+    label: Default SQL warehouse size
+    hint: Starting size for the main warehouse, from 2X-Small to 4X-Large. You can resize it later.
+options:
+  - value: serverless_jobs
+    label: Serverless jobs
+    description: Lakeflow Jobs and pipelines run on Databricks-managed compute with autoscaling and Photon enabled.
+    tradeoff: No clusters to manage, but only supported task types run and large jobs can start slower.
+    pros:
+      - No cluster configuration, and all workspace users can run workflows
+      - Databricks upgrades the runtime and tunes instance types and memory
+      - Supports notebook, Python script, dbt, Python wheel and JAR tasks
+    cons:
+      - Requires Unity Catalog and standard access mode, so every workload must support that mode
+      - Jobs needing a lot of memory or many tasks can see longer startup
+    adr_context: >-
+      Serverless compute was chosen for jobs. Workloads run in standard access mode on compute
+      that Databricks provisions and upgrades, so no cluster configuration is maintained for
+      scheduled work.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/jobs/run-serverless-jobs
+        title: Run your Lakeflow Jobs with serverless compute for workflows
+      - url: https://docs.databricks.com/aws/en/compute/serverless/
+        title: Connect to serverless compute
+  - value: serverless_sql
+    label: Serverless SQL warehouses
+    description: SQL warehouses that run on Databricks-managed infrastructure and start in seconds.
+    tradeoff: Best startup and scaling for BI and SQL, but it needs the Premium plan and a supported workspace.
+    pros:
+      - Typical startup of 2 to 6 seconds and rapid scaling when queries queue
+      - Includes Photon, Predictive IO and Intelligent Workload Management
+      - No instances to size or patch
+    cons:
+      - Needs the Premium plan or above, and is not available during a free trial
+      - CPU architecture is not selectable and can change between restarts
+    adr_context: >-
+      Serverless SQL warehouses were chosen for SQL and BI workloads. They start in seconds,
+      scale with query demand, and need no infrastructure management. Workspaces meet the
+      serverless requirements.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/admin/sql/serverless
+        title: Set up serverless SQL warehouses
+      - url: https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-types
+        title: SQL warehouse types
+  - value: serverless_notebooks
+    label: Serverless notebooks
+    description: Interactive notebooks connect to Databricks-managed compute without creating a cluster.
+    tradeoff: Fast start for interactive work, but you give up custom cluster configuration.
+    pros:
+      - Quick connection without waiting for a cluster
+      - Releases roll out to everyone, so there is no runtime version to pick
+    cons:
+      - Some features and libraries are limited on serverless
+      - Cost attribution uses serverless usage policies, which are in preview
+    adr_context: >-
+      Serverless compute was chosen for notebooks. Interactive users connect to managed compute
+      with no cluster to create, and custom environments are limited to what serverless allows.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/compute/serverless/
+        title: Connect to serverless compute
+      - url: https://docs.databricks.com/aws/en/compute/serverless/limitations
+        title: Serverless compute limitations
+  - value: classic_jobs
+    label: Classic jobs compute
+    description: Job clusters you configure, deployed in your cloud account and started per run.
+    tradeoff: Full control over instances, libraries and network, with cluster configuration and tagging to maintain.
+    pros:
+      - Choose instance types, runtime versions and init settings
+      - Runs inside your own virtual network and subnets
+      - Compute policies limit what users can create and cap cost per cluster
+    cons:
+      - Slower startup and idle cost if sizing is wrong
+      - Policies and runtime upgrades are yours to manage
+    adr_context: >-
+      Classic job compute was chosen for workloads that serverless does not support or that need
+      specific instance types, libraries or network placement. Compute policies set the allowed
+      configurations.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/compute/use-compute
+        title: Classic compute overview
+      - url: https://docs.databricks.com/aws/en/admin/clusters/policies
+        title: Create and manage compute policies
+  - value: classic_all_purpose
+    label: Classic all-purpose compute
+    description: Shared or dedicated clusters that people attach notebooks to, deployed in your cloud account.
+    tradeoff: Flexible for interactive and library-heavy work, but easy to leave running and over-sized.
+    pros:
+      - Standard access mode lets many users share one cluster with workload isolation
+      - Dedicated mode assigns a cluster to a user or group
+      - Full control over configuration
+    cons:
+      - Idle clusters keep costing money until they terminate
+      - Users need cluster creation entitlements or a policy to create them
+    adr_context: >-
+      Classic all-purpose clusters were kept for interactive work that needs custom
+      configuration. Users get access through compute policies, and auto-termination limits idle
+      cost.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/compute/use-compute
+        title: Classic compute overview
+      - url: https://docs.databricks.com/aws/en/admin/clusters/policies
+        title: Create and manage compute policies
