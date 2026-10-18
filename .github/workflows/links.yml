@@ -1,0 +1,42 @@
+name: Link check
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - name: Check links
+        run: set -o pipefail; npm run check:links 2>&1 | tee "$RUNNER_TEMP/links-output.txt"
+      - name: Open issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "The weekly link check failed: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo '```'
+            tail -c 60000 "$RUNNER_TEMP/links-output.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/issue-body.md"
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Broken or renamed source links ($(date -u +%F))" \
+            --body-file "$RUNNER_TEMP/issue-body.md"

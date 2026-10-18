@@ -1,12 +1,12 @@
 import { defineConfig } from '@playwright/test';
 
-// Uses the installed Google Chrome; no Playwright browser download.
+// Locally uses the installed Google Chrome (no browser download); on CI the bundled chromium.
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: false,
   workers: 1,
   reporter: [['list']],
-  use: { channel: 'chrome', baseURL: 'http://localhost:4173', viewport: { width: 1280, height: 900 } },
+  use: { channel: process.env.CI ? undefined : 'chrome', baseURL: 'http://localhost:4173', viewport: { width: 1280, height: 900 } },
   webServer: {
     command: 'npm run build && npm run preview',
     url: 'http://localhost:4173',
