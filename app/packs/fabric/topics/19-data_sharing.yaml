@@ -88,14 +88,14 @@ options:
   - value: graphql_api
     label: API for GraphQL
     description: A GraphQL API item exposes chosen tables and views to applications through one endpoint.
-    tradeoff: Applications get a typed API with no backend code, but resolvers cannot be customized.
+    tradeoff: Applications get a typed API from a generated schema and resolvers, but resolvers cannot be customized.
     pros:
       - Schema, resolvers and endpoint are generated from the data sources
       - Clients request only the fields they need, in one call
       - Relationships let one query return related entities
     cons:
       - Every exposed table or view must have a primary key
-      - Sources on a SQL analytics endpoint are read-only, so only queries work
+      - Read-only over SQL analytics endpoints, with a 100-second timeout and 64 MB response limit
       - Resolvers cannot be edited; custom logic needs a stored procedure
     adr_context: >-
       An API for GraphQL item was chosen for applications that need typed access to curated tables.
@@ -108,6 +108,8 @@ options:
         title: What is Microsoft Fabric API for GraphQL?
       - url: https://learn.microsoft.com/fabric/data-engineering/graphql-faq
         title: Fabric API for GraphQL frequently asked questions
+      - url: https://learn.microsoft.com/fabric/data-engineering/api-graphql-limits
+        title: Limitations of API for GraphQL
   - value: external_sharing
     label: External data sharing
     description: Share folders or tables read-only with users in another Fabric tenant through a cross-tenant shortcut.

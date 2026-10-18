@@ -74,6 +74,7 @@ options:
       - Works only on F SKU capacities, with one private link service per workspace
       - Portal can't set inbound and outbound protection together, so use the network policy API
       - Cross-workspace reads need managed private endpoints, and some item types aren't supported
+      - Semantic models, deployment pipelines and workspace monitoring aren't supported in a workspace with a workspace-level private link
     adr_context: >-
       Workspace-level private links and outbound access protection were chosen for the
       workspaces that hold sensitive data. Other workspaces stay on public endpoints. Approved

@@ -72,7 +72,7 @@ options:
       - Storage is free up to a limit tied to the capacity size
       - No code and no pipeline to run
     cons:
-      - Limited to the supported source types, and some of them are still in preview
+      - Limited to supported sources; MySQL, Dremio and SharePoint List mirroring are still in preview
       - Destination is a single read-only mirrored database with no transformation
       - Querying the mirrored data still uses capacity
     adr_context: >-
@@ -185,7 +185,8 @@ options:
       - Creates a lakehouse, SQL endpoint and semantic model for the data
       - Microsoft marks it as the recommended way to link Dataverse to Fabric
     cons:
-      - Adds every non-system table that has change tracking, and you can't remove them
+      - Some system tables and tables required by Microsoft add-ins can't be removed
+      - The Fabric capacity must be in the same Azure geography as the Dataverse environment
       - Consumes extra Dataverse database storage
       - A Dataverse environment links to a single Fabric workspace today
     adr_context: >-

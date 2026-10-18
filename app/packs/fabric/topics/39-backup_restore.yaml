@@ -22,7 +22,7 @@ options:
     tradeoff: Nothing to run, but every window is short and fixed by the platform or by retention settings.
     pros:
       - OneLake soft delete keeps deleted files for seven days
-      - Deleted items can be restored from the workspace recycle bin during the retention period
+      - Deleted items can be restored for 3 days by default (up to 90), deleted workspaces for 7
       - Warehouses create restore points every eight hours and keep 30 days of history by default
     cons:
       - Windows are measured in days, and a change noticed late can't be undone
@@ -53,12 +53,12 @@ options:
     cons:
       - Longer retention raises storage cost
       - Delta restore fails if VACUUM already removed the files for that version
-      - Warehouse retention settings are in preview
+      - Raising warehouse retention above the 30-day default is a preview setting
     adr_context: >-
       Warehouse restore points, extended retention, table clones, Delta restore and Git history
       were chosen. Restore points are created before each release, retention is raised above the
       default, and item definitions are kept in Git, so most mistakes can be undone within weeks.
-    maturity: preview
+    maturity: ga
     as_of: '2026-10-18'
     sources:
       - url: https://learn.microsoft.com/fabric/data-warehouse/data-retention

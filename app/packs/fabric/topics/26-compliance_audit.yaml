@@ -72,7 +72,7 @@ options:
     pros:
       - Workspace customer-managed keys add a layer of encryption you control and can revoke
       - Multi-Geo capacities keep a workspace's compute and storage in the chosen region
-      - Purview Audit (Premium) keeps audit records for up to one year
+      - Audit (Premium) retention policies can keep Fabric audit records for up to one year, or ten with an add-on licence
     cons:
       - If the key vault key is disabled or deleted, workspace data becomes unreachable
       - Spark cluster data and some metadata are not covered by customer-managed keys

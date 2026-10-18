@@ -52,6 +52,7 @@ options:
     cons:
       - Billed as BCDR storage and BCDR operations
       - Once you change the setting, it's locked for 30 days
+      - Turning DR on can take a long time in North Europe, West Europe and the main US regions
       - KQL data, Activator, GraphQL, apps and other non-OneLake items need Git or a rebuild
       - Replication is asynchronous, so recent writes can be lost, and it needs a paired region where Fabric runs
     adr_context: >-

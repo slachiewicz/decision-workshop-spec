@@ -26,6 +26,7 @@ options:
       - Teams do not see a cost for what they use
       - The app's compute views cover 14 days, so trend history needs your own export
       - Usage data arrives 10 to 15 minutes late
+      - The Metrics app doesn't raise alerts; use capacity overview events for that
     adr_context: >-
       Capacity-level attribution was chosen. The capacity cost is a platform budget line, and the
       platform team reviews consumption by workspace and item in the Capacity Metrics app to find

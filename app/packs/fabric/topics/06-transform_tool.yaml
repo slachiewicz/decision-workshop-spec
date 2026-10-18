@@ -88,11 +88,11 @@ options:
     tradeoff: Brings code review, tests and lineage to SQL, but the Fabric dbt job is still in preview.
     pros:
       - Models, tests and dependencies are versioned in Git
-      - Runs against a Fabric warehouse from a dbt job, with run and lineage views
+      - Runs against a Fabric warehouse or lakehouse from a dbt job, with run and lineage views
       - A project can move between warehouse adapters with a profile change
     cons:
       - The dbt job item is in preview
-      - The dbt job targets a warehouse, so a lakehouse-only design needs another route
+      - Imports are limited to 5,000 files, and a GitHub project needs dbt_project.yml at the repo root and a classic PAT
       - Adds dbt skills and a project structure to the team
     adr_context: >-
       dbt was chosen for SQL transformations that need tests, dependency management and code
@@ -107,5 +107,7 @@ options:
         title: Tutorial - Set up dbt for Fabric Data Warehouse
       - url: https://learn.microsoft.com/fabric/data-factory/apache-airflow-jobs-dbt-fabric
         title: Transform data using dbt
+      - url: https://learn.microsoft.com/fabric/data-factory/common-dbt-job-patterns
+        title: Common dbt job patterns in Microsoft Fabric
 rule_reasons:
   needs_warehouse: T-SQL transformations run in a Fabric warehouse. Choose Warehouse only, or Lakehouse plus Warehouse, in the storage engine decision.

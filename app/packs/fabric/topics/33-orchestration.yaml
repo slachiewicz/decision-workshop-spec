@@ -43,20 +43,20 @@ options:
   - value: airflow_job
     label: Apache Airflow job
     description: A managed Apache Airflow environment in Fabric that runs Python DAGs.
-    tradeoff: Code-first and portable DAGs, but it is in preview, bills by pool uptime and lacks private networking.
+    tradeoff: Code-first and portable DAGs, but it bills by pool uptime and lacks private networking.
     pros:
       - DAGs are Python, so they get normal code review and testing
       - Supports Git sync and Azure Key Vault as a secrets backend
       - Supports Airflow plugins and libraries, and can run Fabric items through connections
     cons:
-      - Still in preview
+      - Git integration, deployment pipelines and workspace-identity connections for Airflow jobs are in preview
       - Billed on pool uptime, and a custom pool that runs all day uses capacity all day
       - Private networks and virtual networks aren't supported
     adr_context: >-
       Apache Airflow jobs were chosen for code-first orchestration. The team writes Python DAGs
-      and wants them in Git, and accepts that the feature is in preview and has no private
+      and wants them in Git, and accepts that it has no private
       networking, and that pool uptime is billed against capacity.
-    maturity: preview
+    maturity: ga
     as_of: '2026-10-18'
     sources:
       - url: https://learn.microsoft.com/fabric/data-factory/apache-airflow-jobs-concepts
@@ -65,6 +65,8 @@ options:
         title: Apache Airflow job pricing for Data Factory in Microsoft Fabric
       - url: https://learn.microsoft.com/fabric/data-factory/apache-airflow-jobs-workspace-identity
         title: Use workspace identity to authenticate Apache Airflow jobs to Fabric services
+      - url: https://learn.microsoft.com/fabric/data-factory/cicd-apache-airflow-jobs
+        title: CI/CD for Apache Airflow in Fabric Data Factory
   - value: external_scheduler
     label: External scheduler
     description: A scheduler outside Fabric, such as an existing Airflow or CI/CD system, calls Fabric items by API.
@@ -84,7 +86,7 @@ options:
     maturity: ga
     as_of: '2026-10-18'
     sources:
-      - url: https://learn.microsoft.com/fabric/admin/service-admin-portal-developer
-        title: Developer tenant settings
-      - url: https://learn.microsoft.com/fabric/data-factory/apache-airflow-jobs-move-s3-data-lakehouse
-        title: Tutorial - Move data from Amazon S3 to a Microsoft Fabric lakehouse using Apache Airflow
+      - url: https://learn.microsoft.com/fabric/data-engineering/notebook-public-api
+        title: Manage and execute Fabric notebooks with public APIs
+      - url: https://learn.microsoft.com/rest/api/fabric/articles/identity-support
+        title: Identity support for logging into the Microsoft Fabric

@@ -72,7 +72,7 @@ options:
       - Multifactor authentication and Conditional Access apply to the person
       - Fine for interactive development and one-off tasks
     cons:
-      - Connections that use a personal account are not supported with trusted workspace access
+      - Personal cloud connections on semantic models can't use trusted workspace access; use shared connections
       - Work can break when the person changes role or leaves
       - Personal tokens, such as a GitHub PAT, have to be managed per person
     adr_context: >-

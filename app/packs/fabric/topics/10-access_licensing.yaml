@@ -86,4 +86,4 @@ options:
       - url: https://learn.microsoft.com/power-bi/fundamentals/service-features-license-type
         title: Power BI service features by license type
 rule_reasons:
-  front_end_sku: With a back-end and front-end split, the capacity that serves reports must be F64 or larger for free viewers to read Power BI content.
+  front_end_sku: With a back-end and front-end split, every capacity hosting a report or its semantic model must be F64 or larger for free viewers to read it.

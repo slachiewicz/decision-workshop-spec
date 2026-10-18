@@ -49,6 +49,8 @@ options:
       - Some Iceberg types, such as V3 variant and geometry, are dropped in conversion
       - Conversion can fail on source table content, so the conversion log needs checking
       - A shortcut must be in the right place to be converted
+      - Not supported for tenants or workspaces with private links enabled
+      - A OneLake shortcut to an Iceberg table must target the same region
     adr_context: >-
       Delta with Iceberg interoperability was chosen. Delta remains the stored format, and
       OneLake metadata virtualization lets Iceberg tables from partner platforms be read as Delta

@@ -61,22 +61,24 @@ options:
   - value: agent_pilot
     label: Data agent pilot
     description: Build one Fabric data agent over a warehouse, lakehouse or semantic model and test it with a small group.
-    tradeoff: Tests real questions on real data, but it is a preview feature and needs paid capacity.
+    tradeoff: Tests real questions on real data, but surfacing it in Microsoft Copilot is still in preview and it needs paid capacity.
     pros:
       - Tests the agent with real questions before wider rollout
       - Works over a warehouse, lakehouse, semantic model, KQL database or mirrored database
       - A published agent can be added as a tool in Microsoft Copilot Studio
     cons:
-      - The data agent is in preview
+      - Consuming the agent in Microsoft 365 Copilot and Copilot Studio is still in preview
       - Needs a paid F2 or higher capacity and a cross-geo setting outside the US and EU
       - Responses used in Microsoft Copilot may leave Fabric's compliance boundary or region
     adr_context: >-
       A data agent pilot was started over one curated source with a named owner and a small user
       group. It runs on a paid capacity, and the cross-geo AI settings were reviewed because
       responses consumed in Microsoft Copilot can leave Fabric's compliance boundary.
-    maturity: preview
+    maturity: ga
     as_of: '2026-10-18'
     sources:
+      - url: https://learn.microsoft.com/fabric/data-science/concept-data-agent
+        title: Fabric data agent concepts
       - url: https://learn.microsoft.com/fabric/data-science/data-agent-end-to-end-tutorial
         title: Fabric data agent example with the AdventureWorks dataset (preview)
       - url: https://learn.microsoft.com/fabric/data-science/data-agent-microsoft-365-copilot

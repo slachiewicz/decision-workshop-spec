@@ -45,6 +45,7 @@ options:
       - Capacity templates alert when a metric crosses a threshold or the capacity changes state
       - A numeric change condition fires once per crossing, not continuously
       - Job alerts can be managed at scale in the Monitor hub
+      - Free failure e-mails for scheduled jobs need no Activator or workspace monitoring
     cons:
       - Activator-based job alerts are in preview and need workspace monitoring
       - Capacity operation events are high volume and must be grouped or filtered

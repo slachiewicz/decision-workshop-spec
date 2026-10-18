@@ -16,8 +16,9 @@ adr_context: >-
   semantic model apply only to that model. The team recorded which tables each rule protects.
 rule_reasons:
   dl_sql_ignores_onelake: >-
-    Direct Lake on SQL endpoint checks access on the SQL analytics endpoint, not in OneLake security
-    roles, so OneLake rules are not applied as written there.
+    Direct Lake on SQL endpoint resolves access through the SQL analytics endpoint. In its default
+    owner-identity mode OneLake roles aren't applied per user; in user-identity mode they are, but
+    every query falls back to DirectQuery.
 options:
   - value: none
     label: No row or column rules
