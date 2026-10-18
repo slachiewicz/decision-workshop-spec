@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "keys.schema.json",
+  "title": "Pack keys (structure layer)",
+  "type": "object",
+  "required": ["pack", "topics"],
+  "additionalProperties": false,
+  "properties": {
+    "pack": { "type": "string", "pattern": "^[a-z]+$" },
+    "topics": { "type": "array", "items": { "$ref": "#/$defs/topic" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "decisionKey": { "type": "string", "pattern": "^[a-z]+(\\.[a-z_]+)+$" },
+    "requirement": {
+      "type": "object",
+      "required": ["decision_key", "severity", "reason_id"],
+      "additionalProperties": false,
+      "properties": {
+        "decision_key": { "$ref": "#/$defs/decisionKey" },
+        "in": { "type": "array", "items": { "$ref": "#/$defs/id" }, "minItems": 1 },
+        "not_in": { "type": "array", "items": { "$ref": "#/$defs/id" }, "minItems": 1 },
+        "any_of": { "type": "array", "items": { "$ref": "#/$defs/id" }, "minItems": 1 },
+        "none_of": { "type": "array", "items": { "$ref": "#/$defs/id" }, "minItems": 1 },
+        "severity": { "enum": ["block", "warn"] },
+        "reason_id": { "$ref": "#/$defs/id" }
+      },
+      "oneOf": [
+        { "required": ["in"] }, { "required": ["not_in"] },
+        { "required": ["any_of"] }, { "required": ["none_of"] }
+      ]
+    },
+    "canvasEffect": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["layer_boxes", "landing_zone", "container_grouping", "env_multiplier", "layer_engines", "transform_band", "serving_lane", "lock", "footer_badge"] }
+      }
+    },
+    "valueField": {
+      "type": "object",
+      "required": ["id", "type", "required"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["text", "select"] },
+        "required": { "type": "boolean" },
+        "choices_ref": { "$ref": "#/$defs/id" }
+      },
+      "if": { "properties": { "type": { "const": "select" } } },
+      "then": { "required": ["choices_ref"] }
+    },
+    "option": {
+      "type": "object",
+      "required": ["value"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "$ref": "#/$defs/id" },
+        "requires": { "type": "array", "items": { "$ref": "#/$defs/requirement" } },
+        "canvas_effect": { "$ref": "#/$defs/canvasEffect" },
+        "value_fields": { "type": "array", "items": { "$ref": "#/$defs/valueField" } }
+      }
+    },
+    "modifier": {
+      "type": "object",
+      "required": ["id", "decision_key", "on_value", "off_value"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "decision_key": { "$ref": "#/$defs/decisionKey" },
+        "on_value": { "$ref": "#/$defs/id" },
+        "off_value": { "$ref": "#/$defs/id" },
+        "canvas_effect": { "$ref": "#/$defs/canvasEffect" }
+      }
+    },
+    "topic": {
+      "type": "object",
+      "required": ["number", "id", "decision_key", "cluster", "status", "weight", "mode", "renderer", "decision_type", "required", "recommendation", "options"],
+      "additionalProperties": false,
+      "properties": {
+        "number": { "type": "integer", "minimum": 1, "maximum": 99 },
+        "id": { "$ref": "#/$defs/id" },
+        "decision_key": { "$ref": "#/$defs/decisionKey" },
+        "cluster": { "enum": ["architecture", "platform_setup", "consumption", "access_governance", "operations", "conventions"] },
+        "status": { "enum": ["core", "proposed"] },
+        "weight": { "enum": ["fast", "standard", "deep"] },
+        "mode": { "enum": ["decide", "surface", "naming"] },
+        "renderer": { "enum": ["cards", "source_mapper", "naming_form"] },
+        "decision_type": { "enum": ["single", "multi", "confirm"] },
+        "required": { "type": "boolean" },
+        "recommendation": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "adaptive_recommendation": {
+          "type": "object",
+          "required": ["follows", "map"],
+          "additionalProperties": false,
+          "properties": {
+            "follows": { "$ref": "#/$defs/decisionKey" },
+            "map": { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/id" } } }
+          }
+        },
+        "canvas_element": { "$ref": "#/$defs/id" },
+        "options": { "type": "array", "items": { "$ref": "#/$defs/option" } },
+        "modifiers": { "type": "array", "items": { "$ref": "#/$defs/modifier" } },
+        "value_fields": { "type": "array", "items": { "$ref": "#/$defs/valueField" } }
+      }
+    }
+  }
+}

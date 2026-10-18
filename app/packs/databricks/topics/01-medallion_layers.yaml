@@ -1,0 +1,95 @@
+id: medallion_layers
+title: Medallion layers
+situation: >-
+  Data improves in stages: it lands as the source sent it, gets cleaned and validated, then
+  gets modelled for analytics. The number of stages decides how much you can replay, audit
+  and reuse later. In Unity Catalog each layer usually becomes a schema, so this choice also
+  sets the schemas every catalog will contain.
+intake:
+  - How many source systems feed analytics today, and how many business domains consume the results?
+  - When a number looks wrong, how far back do you need to replay, and from what?
+  - Do sources arrive as files (exports, drops, events) that need somewhere governed to land?
+recommendation_note: Three layers suit most teams. Add a Mart layer only when domains need their own shaped copies.
+adr_context: >-
+  Bronze, Silver and Gold were chosen. Bronze keeps each source in its raw state, so later
+  layers can be rebuilt from it. Silver holds validated, cleaned and enriched tables, so
+  data-quality rules live in one place. Gold holds the modelled, aggregated views that
+  dashboards, ML and applications read. Each layer is a schema in Unity Catalog, as in the
+  Databricks medallion guidance.
+options:
+  - value: raw_serving
+    label: Raw and Serving
+    description: Two layers. Data lands raw and is served from there, with no separate cleaning tier.
+    tradeoff: Quickest to stand up, but cleaning rules end up inside every query.
+    pros:
+      - Fewest schemas and pipelines to build and secure
+      - Fine for a few stable sources and a single consumer
+    cons:
+      - Cleaning logic is repeated in every query, dashboard or model
+      - Hard to audit a figure back to its source
+      - Breaks down once a second domain needs the same data
+    adr_context: >-
+      Two layers, Raw and Serving, were chosen over the recommended three. The source estate is
+      small and stable enough that a separate cleaning tier would add work without benefit.
+      Cleaning rules live in the serving layer, which must be revisited if more sources or
+      domains are added.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/lakehouse/medallion
+        title: What is the medallion lakehouse architecture?
+  - value: bronze_silver_gold
+    label: Bronze, Silver, Gold
+    description: Raw as received, then validated and cleaned, then modelled and aggregated.
+    tradeoff: Clear separation that Databricks documents and most teams already know.
+    pros:
+      - Bronze keeps the raw source state, so later layers can be rebuilt
+      - Silver puts validation and cleaning rules in one rerunnable place
+      - Gold holds the modelled views that dashboards, ML and apps read
+      - Each layer maps onto one Unity Catalog schema
+    cons:
+      - Three sets of tables and pipelines to build and promote
+      - Data is stored more than once
+    adr_context: >-
+      Bronze, Silver and Gold were chosen because they separate raw, cleaned and modelled data,
+      and map onto one Unity Catalog schema each, as in the Databricks medallion guidance.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/lakehouse/medallion
+        title: What is the medallion lakehouse architecture?
+  - value: bronze_silver_gold_mart
+    label: Bronze, Silver, Gold, Mart
+    description: Adds a per-domain Mart layer on top of a shared, conformed Gold layer.
+    tradeoff: Each domain gets analysis-ready tables, at the cost of a fourth tier and more storage.
+    pros:
+      - Gold stays the single conformed layer for the whole organization
+      - Domains shape their own Marts without changing Gold
+      - Ownership is clear, since a Mart belongs to one domain
+    cons:
+      - Four tiers to build and promote
+      - Marts drift from Gold unless someone owns the definitions
+    adr_context: >-
+      A fourth Mart layer was added on top of Gold. Several domains need differently shaped
+      tables from the same conformed data, and building those in Gold would make it serve no
+      one well. Each Mart has a named owner, and Gold remains the shared source of truth.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://docs.databricks.com/aws/en/lakehouse/medallion
+        title: What is the medallion lakehouse architecture?
+modifiers:
+  - id: landing_volume
+    title: Landing volume
+    label: Land raw files in a Unity Catalog volume before Bronze
+    hint: >-
+      Useful when sources arrive as files. A volume governs non-tabular data with the same
+      Unity Catalog permissions as tables, and Auto Loader can pick files up from it into
+      Bronze tables.
+    on_adr_context: >-
+      A landing volume was added ahead of Bronze. File-based sources land in a Unity Catalog
+      volume, governed like tables, and are loaded into Bronze tables from there. Sources that
+      connect directly still load straight into Bronze.
+    off_adr_context: >-
+      No landing volume was added. Every source connects directly and loads into Bronze tables.
+      A volume can be added later, without changing Bronze, if file-based sources appear.

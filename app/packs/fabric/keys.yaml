@@ -1,0 +1,677 @@
+# Structure layer for the Fabric pack. Driver-owned: content writers read this file and
+# never edit it. Ask for a key change in the hand-back instead.
+pack: fabric
+topics:
+  # ---- Part 1. Architecture ----
+  - number: 1
+    id: medallion_layers
+    decision_key: medallion.layers
+    cluster: architecture
+    status: core
+    weight: deep
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: true
+    recommendation: [bronze_silver_gold]
+    canvas_element: layers
+    options:
+      - { value: raw_serving, canvas_effect: { type: layer_boxes, layers: [raw, serving] } }
+      - { value: bronze_silver_gold, canvas_effect: { type: layer_boxes, layers: [bronze, silver, gold] } }
+      - { value: bronze_silver_gold_mart, canvas_effect: { type: layer_boxes, layers: [bronze, silver, gold, mart] } }
+    modifiers:
+      - { id: landing_zone, decision_key: medallion.landing, on_value: central_landing, off_value: none, canvas_effect: { type: landing_zone, on: true } }
+
+  - number: 2
+    id: isolation_strategy
+    decision_key: platform.isolation
+    cluster: architecture
+    status: core
+    weight: deep
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: true
+    recommendation: []
+    canvas_element: containers
+    options:
+      - { value: per_layer_per_env, canvas_effect: { type: container_grouping, pattern: per_layer } }
+      - { value: bronze_silver_shared, canvas_effect: { type: container_grouping, pattern: first_pair_shared } }
+      - { value: one_per_env, canvas_effect: { type: container_grouping, pattern: single } }
+
+  - number: 3
+    id: platform_centralization
+    decision_key: platform.centralization
+    cluster: architecture
+    status: core
+    weight: deep
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: [backbone_marts]
+    value_fields:
+      - { id: platform_owner, type: text, required: false }
+    options:
+      - { value: backbone_marts }
+      - { value: fully_centralized }
+
+  - number: 4
+    id: ingestion
+    decision_key: integration.mechanisms
+    cluster: architecture
+    status: core
+    weight: deep
+    mode: decide
+    renderer: source_mapper
+    decision_type: multi
+    required: true
+    recommendation: []
+    canvas_element: sources
+    options:
+      - { value: copy_job }
+      - { value: pipelines }
+      - { value: mirroring }
+      - { value: shortcuts }
+      - { value: notebooks }
+      - { value: dataflow_gen2 }
+      - { value: eventstream }
+      - { value: fabric_link }
+      - { value: synapse_link }
+
+  - number: 5
+    id: storage_engine
+    decision_key: storage.engine
+    cluster: architecture
+    status: core
+    weight: deep
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: true
+    recommendation: []
+    canvas_element: layers
+    options:
+      - { value: lakehouse_only, canvas_effect: { type: layer_engines, default: lakehouse } }
+      - { value: warehouse_only, canvas_effect: { type: layer_engines, default: warehouse } }
+      - { value: lakehouse_warehouse, canvas_effect: { type: layer_engines, default: lakehouse, last: warehouse } }
+
+  - number: 6
+    id: transform_tool
+    decision_key: platform.transform_tool
+    cluster: architecture
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: []
+    options:
+      - { value: spark_notebooks }
+      - value: tsql_warehouse
+        requires:
+          - { decision_key: storage.engine, in: [warehouse_only, lakehouse_warehouse], severity: block, reason_id: needs_warehouse }
+      - { value: dataflow_gen2 }
+      - { value: dbt }
+
+  - number: 7
+    id: transform_location
+    decision_key: platform.transform_location
+    cluster: architecture
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    canvas_element: containers
+    options:
+      - { value: colocated, canvas_effect: { type: transform_band, on: false } }
+      - { value: separate_engineering, canvas_effect: { type: transform_band, on: true } }
+
+  # ---- Part 2. Platform setup ----
+  - number: 8
+    id: region
+    decision_key: platform.region
+    cluster: platform_setup
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: true
+    recommendation: [primary_region]
+    options:
+      - value: primary_region
+        value_fields:
+          - { id: azure_region, type: select, required: true, choices_ref: azure_regions }
+      - { value: multi_region }
+
+  - number: 9
+    id: compute_strategy
+    decision_key: cap.strategy
+    cluster: platform_setup
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: true
+    recommendation: [single_surge]
+    options:
+      - value: single_surge
+        value_fields:
+          - { id: starting_sku, type: select, required: false, choices_ref: fabric_skus }
+          - { id: surge_level, type: select, required: false, choices_ref: surge_levels }
+      - value: split_dev_prod
+        requires:
+          - { decision_key: ops.environments, in: [dev_prod, dev_test_prod], severity: block, reason_id: needs_two_envs }
+      - { value: split_by_bu }
+      - { value: split_back_front }
+
+  - number: 10
+    id: access_licensing
+    decision_key: cap.license
+    cluster: platform_setup
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: []
+    options:
+      - value: free_viewers_f64
+        requires:
+          - { decision_key: cap.strategy, not_in: [split_back_front], severity: warn, reason_id: front_end_sku }
+      - { value: pro_per_user }
+      - { value: ppu }
+
+  - number: 11
+    id: environments
+    decision_key: ops.environments
+    cluster: platform_setup
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: true
+    recommendation: []
+    canvas_element: environments
+    options:
+      - { value: single_env, canvas_effect: { type: env_multiplier, envs: [prod] } }
+      - { value: dev_prod, canvas_effect: { type: env_multiplier, envs: [dev, prod] } }
+      - { value: dev_test_prod, canvas_effect: { type: env_multiplier, envs: [dev, test, prod] } }
+
+  - number: 12
+    id: source_control
+    decision_key: ops.git_platform
+    cluster: platform_setup
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    canvas_element: footer
+    options:
+      - { value: ado, canvas_effect: { type: footer_badge, label_id: git_ado } }
+      - { value: github, canvas_effect: { type: footer_badge, label_id: git_github } }
+      - { value: none }
+
+  - number: 13
+    id: cicd
+    decision_key: ops.deployment
+    cluster: platform_setup
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: [git_fabric_cicd]
+    options:
+      - value: git_fabric_cicd
+        requires:
+          - { decision_key: ops.git_platform, in: [ado, github], severity: block, reason_id: needs_git }
+      - value: deployment_pipelines
+        requires:
+          - { decision_key: ops.environments, in: [dev_prod, dev_test_prod], severity: block, reason_id: needs_two_stages }
+      - { value: manual }
+
+  - number: 14
+    id: disaster_recovery
+    decision_key: dr.posture
+    cluster: platform_setup
+    status: core
+    weight: deep
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    options:
+      - { value: builtin_only }
+      - value: cross_region_replication
+        requires:
+          - { decision_key: ops.git_platform, not_in: [none], severity: warn, reason_id: dr_needs_git }
+      - value: active_active
+        requires:
+          - { decision_key: platform.region, in: [multi_region], severity: block, reason_id: needs_multi_region }
+
+  # ---- Part 3. Consumption ----
+  - number: 15
+    id: bi_serving_pattern
+    decision_key: bi.pattern
+    cluster: consumption
+    status: core
+    weight: fast
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    canvas_element: serving
+    options:
+      - { value: model_report_split, canvas_effect: { type: serving_lane, pattern: split } }
+      - { value: single_workspace, canvas_effect: { type: serving_lane, pattern: shared } }
+      - { value: tiered_split, canvas_effect: { type: serving_lane, pattern: split } }
+      - { value: reports_in_gold, canvas_effect: { type: serving_lane, pattern: in_gold } }
+
+  - number: 16
+    id: query_mode
+    decision_key: bi.query_mode
+    cluster: consumption
+    status: core
+    weight: deep
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: [direct_lake_onelake]
+    options:
+      - { value: direct_lake_onelake }
+      - { value: direct_lake_sql }
+      - { value: import }
+      - { value: directquery }
+      - { value: per_model }
+
+  - number: 17
+    id: distribution
+    decision_key: bi.consumption_surfaces
+    cluster: consumption
+    status: core
+    weight: fast
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: [org_app]
+    options:
+      - { value: org_app }
+      - { value: workspace_access }
+      - { value: subscriptions }
+      - { value: excel_live }
+      - { value: mobile }
+      - { value: embedded }
+
+  - number: 18
+    id: self_service
+    decision_key: bi.self_service
+    cluster: consumption
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    options:
+      - { value: consumers_only }
+      - { value: governed_self_service }
+      - { value: creator_program }
+
+  - number: 19
+    id: data_sharing
+    decision_key: sharing.surfaces
+    cluster: consumption
+    status: core
+    weight: fast
+    mode: surface
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: []
+    options:
+      - { value: shortcuts_internal }
+      - { value: sql_endpoint }
+      - { value: onelake_direct }
+      - { value: graphql_api }
+      - { value: external_sharing }
+
+  - number: 20
+    id: ai_readiness
+    decision_key: ai.readiness
+    cluster: consumption
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: [ai_ready_foundations]
+    options:
+      - { value: not_now }
+      - { value: ai_ready_foundations }
+      - { value: agent_pilot }
+
+  - number: 21
+    id: ml_workloads
+    decision_key: ml.workloads
+    cluster: consumption
+    status: core
+    weight: fast
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: []
+    options:
+      - { value: none_yet }
+      - { value: in_platform }
+      - { value: external_platform }
+
+  # ---- Part 4. Access and governance ----
+  - number: 22
+    id: access_management
+    decision_key: sec.access_management
+    cluster: access_governance
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: true
+    recommendation: [entra_groups]
+    options:
+      - { value: entra_groups }
+      - { value: individual_grants }
+
+  - number: 23
+    id: row_column_security
+    decision_key: sec.rls_pattern
+    cluster: access_governance
+    status: core
+    weight: deep
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: []
+    canvas_element: governance
+    options:
+      - { value: none }
+      - value: onelake_security
+        canvas_effect: { type: lock, scope: storage }
+        requires:
+          - { decision_key: bi.query_mode, none_of: [direct_lake_sql], severity: warn, reason_id: dl_sql_ignores_onelake }
+      - { value: model_rls_groups, canvas_effect: { type: lock, scope: model } }
+      - { value: dynamic_rls, canvas_effect: { type: lock, scope: model } }
+
+  - number: 24
+    id: personal_data
+    decision_key: sec.personal_data
+    cluster: access_governance
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: [isolated_minimised]
+    options:
+      - { value: isolated_minimised }
+      - { value: same_path }
+      - { value: out_of_scope }
+
+  - number: 25
+    id: data_retention
+    decision_key: gov.retention
+    cluster: access_governance
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: [windows_archive]
+    options:
+      - { value: keep_everything }
+      - value: windows_archive
+        value_fields:
+          - { id: online_window, type: select, required: false, choices_ref: retention_windows }
+      - { value: regulatory_schedule }
+
+  - number: 26
+    id: compliance_audit
+    decision_key: sec.compliance_posture
+    cluster: access_governance
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: [audit_ready]
+    options:
+      - { value: minimal }
+      - { value: audit_ready }
+      - { value: regulated }
+
+  # ---- Part 5. Operations and wrap-up ----
+  - number: 27
+    id: cost_attribution
+    decision_key: cost.attribution
+    cluster: operations
+    status: core
+    weight: fast
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: [capacity_level]
+    options:
+      - { value: capacity_level }
+      - { value: chargeback_workspace_domain }
+
+  - number: 28
+    id: monitoring
+    decision_key: ops.monitoring
+    cluster: operations
+    status: core
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: [alerts_review]
+    options:
+      - { value: reactive }
+      - value: alerts_review
+        value_fields:
+          - { id: review_cadence, type: select, required: false, choices_ref: review_cadences }
+      - { value: full_observability }
+
+  - number: 29
+    id: naming_conventions
+    decision_key: naming.confirmed
+    cluster: conventions
+    status: core
+    weight: standard
+    mode: naming
+    renderer: naming_form
+    decision_type: confirm
+    required: false
+    recommendation: []
+    options: []
+
+  # ---- Proposed additions (30 to 39) ----
+  - number: 30
+    id: network_connectivity
+    decision_key: net.connectivity
+    cluster: platform_setup
+    status: proposed
+    weight: deep
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    options:
+      - { value: public_endpoints }
+      - { value: tenant_private_link }
+      - { value: workspace_private_links }
+
+  - number: 31
+    id: automation_identity
+    decision_key: sec.automation_identity
+    cluster: platform_setup
+    status: proposed
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: []
+    options:
+      - { value: workspace_identity }
+      - { value: service_principals }
+      - { value: user_identity }
+
+  - number: 32
+    id: platform_topology
+    decision_key: platform.topology
+    cluster: platform_setup
+    status: proposed
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    options:
+      - { value: domains_mapped }
+      - { value: flat_workspaces }
+
+  - number: 33
+    id: orchestration
+    decision_key: ops.orchestration
+    cluster: platform_setup
+    status: proposed
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    options:
+      - { value: fabric_pipelines }
+      - { value: airflow_job }
+      - { value: external_scheduler }
+
+  - number: 34
+    id: data_quality
+    decision_key: gov.data_quality
+    cluster: access_governance
+    status: proposed
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: []
+    options:
+      - { value: notebook_checks }
+      - { value: purview_data_quality }
+      - { value: third_party }
+
+  - number: 35
+    id: secrets
+    decision_key: sec.secrets
+    cluster: access_governance
+    status: proposed
+    weight: fast
+    mode: decide
+    renderer: cards
+    decision_type: multi
+    required: false
+    recommendation: []
+    options:
+      - { value: stored_connections }
+      - { value: key_vault_references }
+
+  - number: 36
+    id: table_format
+    decision_key: storage.format
+    cluster: platform_setup
+    status: proposed
+    weight: fast
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: [delta]
+    options:
+      - { value: delta }
+      - { value: delta_iceberg_interop }
+
+  - number: 37
+    id: ownership
+    decision_key: gov.ownership
+    cluster: access_governance
+    status: proposed
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    options:
+      - { value: domain_owners }
+      - { value: data_products }
+      - { value: central_team }
+
+  - number: 38
+    id: discovery_lineage
+    decision_key: gov.discovery
+    cluster: access_governance
+    status: proposed
+    weight: fast
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    options:
+      - { value: onelake_catalog }
+      - { value: purview_unified_catalog }
+
+  - number: 39
+    id: backup_restore
+    decision_key: dr.backup
+    cluster: platform_setup
+    status: proposed
+    weight: standard
+    mode: decide
+    renderer: cards
+    decision_type: single
+    required: false
+    recommendation: []
+    options:
+      - { value: platform_defaults }
+      - { value: restore_points_and_git }
+      - { value: scheduled_copies }

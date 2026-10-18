@@ -1,0 +1,27 @@
+# Choice lists for select value fields. Checked 2026-10-18.
+clouds:
+  - { value: azure, label: Azure Databricks }
+  - { value: aws, label: Databricks on AWS }
+  - { value: gcp, label: Databricks on Google Cloud }
+sql_warehouse_sizes:
+  - { value: 2xs, label: 2X-Small }
+  - { value: xs, label: X-Small }
+  - { value: s, label: Small }
+  - { value: m, label: Medium }
+  - { value: l, label: Large }
+  - { value: xl, label: X-Large }
+  - { value: 2xl, label: 2X-Large }
+  - { value: 3xl, label: 3X-Large }
+  - { value: 4xl, label: 4X-Large }
+retention_windows:
+  - { value: 1y, label: 1 year }
+  - { value: 2y, label: 2 years }
+  - { value: 3y, label: 3 years }
+  - { value: 5y, label: 5 years }
+  - { value: 7y, label: 7 years }
+  - { value: 10y, label: 10 years }
+review_cadences:
+  - { value: weekly, label: Weekly }
+  - { value: fortnightly, label: Fortnightly }
+  - { value: monthly, label: Monthly }
+  - { value: quarterly, label: Quarterly }

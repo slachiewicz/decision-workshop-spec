@@ -63,11 +63,11 @@ The five agents run at the same time. None touches another's files.
 
 | Agent | Writes | Reads | Gate |
 |---|---|---|---|
-| A. Fabric content, parts 1–2 (topics 1–14, 30–33, 36) + source catalogue | `packs/fabric/topics/01–14, 30–33, 36`, `packs/fabric/sources.yaml` | schema, `fabric/keys.yaml`, example topics, AUDIT §2 | `check:packs --pack fabric --topics 1-14,30-33,36` |
-| B. Fabric content, parts 3–5 (topics 15–29, 34–35, 37–39) + naming form | `packs/fabric/topics/15–29, 34–35, 37–39` | same | `check:packs --pack fabric --topics 15-29,34-35,37-39` |
-| C. Databricks content, parts 1–2 + source catalogue | `packs/databricks/topics/01–14, 30–33, 36`, `sources.yaml` | schema, `databricks/keys.yaml`, examples, CATALOG.md rows | `check:packs --pack databricks --topics …` |
-| D. Databricks content, parts 3–5 + naming form | `packs/databricks/topics/15–29, 34–35, 37–39` | same | same |
-| E. Engine | `src/engine/` (rules, adr, canvas model, session, migrations) + `tests/engine/` | schema, SPEC §2.3–2.4 | `vitest run tests/engine` with golden ADR fixtures built from the example topics |
+| A. Fabric content, topics 2–14, 30–33, 36, 39 | `packs/fabric/topics/…` | [app/docs/briefs/content-writer.md](../app/docs/briefs/content-writer.md) | `check:packs --pack fabric --topics 2-14,30-33,36,39` |
+| B. Fabric content, topics 15, 17–29, 34, 35, 37, 38 | `packs/fabric/topics/…` | same | `check:packs --pack fabric --topics 15,17-29,34-35,37-38` |
+| C. Databricks content, topics 2–14, 30–33, 36, 39 | `packs/databricks/topics/…` | same | `check:packs --pack databricks --topics 2-14,30-33,36,39` |
+| D. Databricks content, topics 15, 17–29, 34, 35, 37, 38 | `packs/databricks/topics/…` | same | `check:packs --pack databricks --topics 15,17-29,34-35,37-38` |
+| E. Engine | `src/engine/` + `tests/engine/` | [app/docs/briefs/engine.md](../app/docs/briefs/engine.md) | `npm run typecheck && npm run check:engine` with golden ADR fixtures |
 
 Brief for each content agent, about 15 lines:
 

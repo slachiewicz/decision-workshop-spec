@@ -1,0 +1,121 @@
+id: query_mode
+title: Semantic model storage mode
+situation: >-
+  A semantic model either reads Delta tables in OneLake directly (Direct Lake), holds its own
+  in-memory copy (Import), or sends every query to the source (DirectQuery). Direct Lake comes
+  in two variants. Direct Lake on OneLake reads through OneLake and honours OneLake security.
+  Direct Lake on SQL endpoint checks permissions through the SQL analytics endpoint and falls
+  back to DirectQuery when it meets SQL row-level security or views.
+intake:
+  - How large are today's models, how long do refreshes take, and do any fail or overlap?
+  - Are models already star schemas with explicit measures, or is remodelling needed first?
+  - Will row-level rules be defined once in OneLake, or per model?
+recommendation_note: Direct Lake on OneLake for new Gold models. Keep Import where a model mixes in non-Fabric sources.
+adr_context: >-
+  Direct Lake on OneLake was chosen as the default for semantic models over Gold. Models read
+  Delta tables in OneLake without a scheduled import, they don't fall back to DirectQuery, and
+  they honour OneLake security roles, so row and column rules defined on the lakehouse apply
+  in reports too. Import stays available for models that combine Fabric data with other
+  sources.
+options:
+  - value: direct_lake_onelake
+    label: Direct Lake on OneLake
+    description: Reads Delta tables through OneLake, with OneLake security applied and no DirectQuery fallback.
+    tradeoff: Fast and refresh-free, but every table must be a Delta table in OneLake.
+    pros:
+      - No scheduled import, so reports see new data without a refresh window
+      - Honours OneLake security roles, so row and column rules are defined once
+      - Supports composite models, so Import or DirectQuery tables can be added
+    cons:
+      - Can't use non-materialized SQL views as tables
+      - Calculated columns and tables have restrictions
+      - Depends on Gold being modelled as clean Delta tables
+    adr_context: >-
+      Direct Lake on OneLake was chosen so models read Gold without import, honour OneLake
+      security, and never fall back to DirectQuery.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/direct-lake-overview
+        title: Direct Lake overview
+      - url: https://learn.microsoft.com/fabric/fundamentals/direct-lake-security-integration
+        title: Integrate Direct Lake security
+  - value: direct_lake_sql
+    label: Direct Lake on SQL endpoint
+    description: Checks permissions through the SQL analytics endpoint and loads data from OneLake.
+    tradeoff: Works with SQL views and SQL security, but falls back to slower DirectQuery when it meets them.
+    pros:
+      - Can use SQL views as tables, through DirectQuery fallback
+      - Reuses permissions already granted on the SQL analytics endpoint
+    cons:
+      - Falls back to DirectQuery whenever SQL row-level security or a view is involved
+      - Doesn't honour OneLake security roles
+      - No composite models with Import tables
+    adr_context: >-
+      Direct Lake on SQL endpoint was chosen over Direct Lake on OneLake because existing access
+      rules live on the SQL analytics endpoint and some model tables are SQL views. Queries that
+      touch those will fall back to DirectQuery, which is accepted for this workload.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/fundamentals/direct-lake-overview
+        title: Direct Lake overview
+      - url: https://learn.microsoft.com/fabric/fundamentals/direct-lake-how-it-works
+        title: How Direct Lake works
+  - value: import
+    label: Import
+    description: The model holds a compressed in-memory copy of the data, refreshed on a schedule.
+    tradeoff: Fastest queries and full DAX and Power Query, but data is only as fresh as the last refresh.
+    pros:
+      - Can combine data from any source Power Query reaches
+      - Full DAX, including calculated columns and tables
+      - Predictable query performance once loaded
+    cons:
+      - Needs scheduled refreshes, and the whole model must fit in capacity memory
+      - Stores a second copy of the data outside OneLake
+    adr_context: >-
+      Import was chosen for these models because they combine Fabric data with sources outside
+      OneLake, and the data changes slowly enough that scheduled refreshes are acceptable.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/connect-data/service-dataset-modes-understand
+        title: Semantic model modes in the Power BI service
+  - value: directquery
+    label: DirectQuery
+    description: Every visual sends a native query to the source. The model stores metadata only.
+    tradeoff: Always current and no size limit, but every click costs a source query.
+    pros:
+      - Always shows current data, with no refresh
+      - No model size limit
+    cons:
+      - Slower visuals, and load on the source with every interaction
+      - Limits on DAX and Power Query transformations
+    adr_context: >-
+      DirectQuery was chosen for these models because they must show data within minutes of it
+      changing at the source, and the data is too large to import.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/connect-data/service-dataset-modes-understand
+        title: Semantic model modes in the Power BI service
+      - url: https://learn.microsoft.com/power-bi/connect-data/desktop-use-directquery
+        title: Use DirectQuery in Power BI Desktop
+  - value: per_model
+    label: Decide per model
+    description: No platform default. Each model owner picks a mode and records why.
+    tradeoff: Fits each model to its needs, but the platform team supports every mode.
+    pros:
+      - Each model gets the mode that suits its size and freshness needs
+      - No forced migration of existing models
+    cons:
+      - Support, monitoring and security work for every mode
+      - Inconsistent behaviour across reports
+    adr_context: >-
+      No platform default was set. Each semantic model owner chooses a storage mode and records
+      the reason in the model's documentation.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/power-bi/transform-model/desktop-storage-mode
+        title: Table storage mode in Power BI semantic models

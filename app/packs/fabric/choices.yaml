@@ -1,0 +1,38 @@
+# Choice lists for select value fields. Checked 2026-10-18. Agent A completes azure_regions
+# from https://learn.microsoft.com/fabric/admin/region-availability
+azure_regions:
+  - { value: westeurope, label: West Europe }
+  - { value: northeurope, label: North Europe }
+  - { value: swedencentral, label: Sweden Central }
+  - { value: germanywestcentral, label: Germany West Central }
+  - { value: switzerlandnorth, label: Switzerland North }
+  - { value: uksouth, label: UK South }
+  - { value: eastus, label: East US }
+  - { value: westus2, label: West US 2 }
+fabric_skus:
+  - { value: F2, label: F2 }
+  - { value: F4, label: F4 }
+  - { value: F8, label: F8 }
+  - { value: F16, label: F16 }
+  - { value: F32, label: F32 }
+  - { value: F64, label: F64 }
+  - { value: F128, label: F128 }
+  - { value: F256, label: F256 }
+  - { value: F512, label: F512 }
+  - { value: F1024, label: F1024 }
+  - { value: F2048, label: F2048 }
+surge_levels:
+  - { value: capacity, label: Capacity level }
+  - { value: capacity_and_workspace, label: Capacity and workspace level (preview) }
+retention_windows:
+  - { value: 1y, label: 1 year }
+  - { value: 2y, label: 2 years }
+  - { value: 3y, label: 3 years }
+  - { value: 5y, label: 5 years }
+  - { value: 7y, label: 7 years }
+  - { value: 10y, label: 10 years }
+review_cadences:
+  - { value: weekly, label: Weekly }
+  - { value: fortnightly, label: Fortnightly }
+  - { value: monthly, label: Monthly }
+  - { value: quarterly, label: Quarterly }

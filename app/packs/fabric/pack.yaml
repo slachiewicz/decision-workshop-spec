@@ -1,0 +1,31 @@
+id: fabric
+name: Data platform decisions for Microsoft Fabric
+platform_label: Microsoft Fabric
+release: 2026.10.18
+groups:
+  - part: 1
+    title: Architecture
+    blurb: How the platform is shaped. The medallion layers, how data comes in and where it lands, the storage engine, and how transformations are built.
+    topics: [medallion_layers, isolation_strategy, platform_centralization, ingestion, storage_engine, transform_tool, transform_location]
+  - part: 2
+    title: Platform setup
+    blurb: The foundations the platform runs on. Region, capacity, licensing, environments, source control, deployment, networking, and recovery.
+    topics: [region, compute_strategy, access_licensing, environments, source_control, cicd, disaster_recovery, network_connectivity, automation_identity, platform_topology, orchestration, table_format, backup_restore]
+  - part: 3
+    title: Consumption
+    blurb: Where data meets people. How models and reports are organised, how models read data, self-service, sharing, and AI.
+    topics: [bi_serving_pattern, query_mode, distribution, self_service, data_sharing, ai_readiness, ml_workloads]
+  - part: 4
+    title: Access and governance
+    blurb: Who gets access, what each person can see, how personal data and retention are handled, and how it all stays provable.
+    topics: [access_management, row_column_security, personal_data, data_retention, compliance_audit, data_quality, secrets, ownership, discovery_lineage]
+  - part: 5
+    title: Operations and wrap-up
+    blurb: Running the platform, then naming what you designed, and the sign-off.
+    topics: [cost_attribution, monitoring, naming_conventions]
+canvas:
+  container_label: Workspace
+  landing_label: Landing zone
+  layer_engine_labels: { lakehouse: Lakehouse, warehouse: Warehouse }
+  serving_label: Power BI
+  badge_labels: { git_ado: Git · Azure DevOps, git_github: Git · GitHub }

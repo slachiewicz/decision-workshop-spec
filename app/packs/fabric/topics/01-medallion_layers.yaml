@@ -1,0 +1,98 @@
+id: medallion_layers
+title: Medallion layers
+situation: >-
+  Data improves in stages: it lands as the source sent it, gets cleaned and conformed,
+  then gets shaped for reporting. The number of stages decides how much you can replay,
+  audit and reuse later. Fabric's own guidance keeps each layer in its own lakehouse or
+  warehouse, so this choice also sets how many storage items you run per environment.
+intake:
+  - How many source systems feed reporting today, and how many business domains consume the results?
+  - When a number looks wrong, how far back do you need to replay, and from what?
+  - Do any sources arrive by mirroring or as shortcuts to storage you already own?
+recommendation_note: Three layers suit most teams. Add a Mart layer only when domains need their own shaped copies.
+adr_context: >-
+  Bronze, Silver and Gold were chosen. Bronze keeps each source as it arrived, so any later
+  layer can be rebuilt from it. Silver holds cleaned, deduplicated and conformed tables, so
+  data-quality rules live in one place and can be rerun. Gold holds the business-ready facts
+  and dimensions that semantic models read. Each layer maps onto its own lakehouse or
+  warehouse, in line with Microsoft's medallion guidance for OneLake.
+options:
+  - value: raw_serving
+    label: Raw and Serving
+    description: Two layers. Data lands raw and is served from there, with no separate cleaning tier.
+    tradeoff: Quickest to stand up, but cleaning rules end up inside report queries.
+    pros:
+      - Fewest items to build and secure
+      - Fine for a few stable sources and a single consumer
+    cons:
+      - Cleaning logic is repeated in every query or model that needs it
+      - Hard to audit a figure back to its source
+      - Breaks down once a second domain needs the same data
+    adr_context: >-
+      Two layers, Raw and Serving, were chosen over the recommended three. The source estate is
+      small and stable enough that a separate cleaning tier would add work without benefit.
+      Cleaning rules will live in the serving layer, which must be revisited if more sources or
+      domains are added.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-medallion-lakehouse-architecture
+        title: Understand medallion architecture for Fabric with OneLake
+  - value: bronze_silver_gold
+    label: Bronze, Silver, Gold
+    description: Raw as received, then cleaned and conformed, then business-ready.
+    tradeoff: Clear separation that most Fabric teams and partners already know.
+    pros:
+      - Bronze keeps an exact copy of every source, so later layers can be rebuilt
+      - Silver puts cleaning and deduplication rules in one rerunnable place
+      - Gold holds the facts and dimensions that semantic models read directly
+      - Matches Microsoft's documented OneLake medallion patterns
+    cons:
+      - Three sets of items to build, secure and promote
+      - Data is stored more than once
+    adr_context: >-
+      Bronze, Silver and Gold were chosen because they separate raw, cleaned and business-ready
+      data, and match the medallion patterns Microsoft documents for OneLake.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/fabric/onelake/onelake-medallion-lakehouse-architecture
+        title: Understand medallion architecture for Fabric with OneLake
+      - url: https://learn.microsoft.com/fabric/onelake/architecture-patterns
+        title: Microsoft OneLake patterns and foundational capabilities
+  - value: bronze_silver_gold_mart
+    label: Bronze, Silver, Gold, Mart
+    description: Adds a per-domain Mart layer on top of a shared, conformed Gold layer.
+    tradeoff: Each domain gets report-ready tables, at the cost of a fourth tier and more storage.
+    pros:
+      - Gold stays the single conformed layer for the whole organization
+      - Domains shape their own Marts without changing Gold
+      - Ownership is clear, since a Mart belongs to one domain
+    cons:
+      - Four tiers to build and promote
+      - Marts drift from Gold unless someone owns the definitions
+    adr_context: >-
+      A fourth Mart layer was added on top of Gold. Several domains need differently shaped
+      tables from the same conformed data, and building those in Gold would make it serve no
+      one well. Each Mart has a named owner, and Gold remains the shared source of truth.
+    maturity: ga
+    as_of: '2026-10-18'
+    sources:
+      - url: https://learn.microsoft.com/azure/architecture/databases/architecture/dataops-mdw
+        title: Modern data warehouse medallion architecture in Microsoft Fabric
+modifiers:
+  - id: landing_zone
+    title: Central landing zone
+    label: Add a central landing zone for mirrored and shortcut sources
+    hint: >-
+      Useful when sources arrive by mirroring or as shortcuts rather than by copy. They land once
+      in a shared workspace, and each environment reads them through shortcuts, so ingestion
+      isn't repeated per environment. Copied sources still load straight into Bronze.
+    on_adr_context: >-
+      A central landing zone was added next to Bronze. Mirrored databases and shortcut sources
+      land there once, and each environment reads them through OneLake shortcuts instead of
+      ingesting its own copy. Sources loaded by copy still go straight into Bronze.
+    off_adr_context: >-
+      No separate landing zone was added. Every source is copied into Bronze, which already
+      plays that role. One can be added later, without changing Bronze, if a mirrored or
+      shortcut source is introduced.
