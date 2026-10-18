@@ -8,6 +8,7 @@ for (const pack of Object.keys(PACK_LABELS) as (keyof typeof PACK_LABELS)[]) {
     const sid = sessionId(page.url());
     const ids = await topicIds(page);
     expect(ids.length).toBeGreaterThan(0);
+    console.log(`${pack}: walking ${ids.length} topics`);
 
     const titles: string[] = [];
     for (const [i, id] of ids.entries()) {

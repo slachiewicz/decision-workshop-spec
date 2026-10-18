@@ -26,13 +26,28 @@ for (const pack of packs) {
 const stripLocale = (path: string) => path.replace(/^\/[a-z]{2}-[a-z]{2}\//, '/').replace(/\/$/, '');
 
 const bad: string[] = [];
+const limited: string[] = []; // still 429 after retries: unchecked, not broken
 const urls = [...uses.keys()];
-for (let i = 0; i < urls.length; i += 8) {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Microsoft Learn rate-limits bursts with 429. Retry with backoff, honouring Retry-After.
+async function get(url: string): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const r = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(20_000) });
+    if (r.status !== 429 || attempt >= 4) return r;
+    const after = Number(r.headers.get('retry-after'));
+    await sleep((Number.isFinite(after) && after > 0 ? after : 2 ** attempt * 2) * 1000);
+  }
+}
+
+const CONCURRENCY = 4;
+for (let i = 0; i < urls.length; i += CONCURRENCY) {
   await Promise.all(
-    urls.slice(i, i + 8).map(async (url) => {
+    urls.slice(i, i + CONCURRENCY).map(async (url) => {
       try {
-        const r = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(20_000) });
-        if (r.status !== 200) bad.push(`${r.status} ${url}  (${uses.get(url)!.join(', ')})`);
+        const r = await get(url);
+        if (r.status === 429) limited.push(url);
+        else if (r.status !== 200) bad.push(`${r.status} ${url}  (${uses.get(url)!.join(', ')})`);
         else if (r.redirected && stripLocale(new URL(r.url).pathname) !== stripLocale(new URL(url).pathname)) {
           bad.push(`moved ${url} -> ${r.url}  (${uses.get(url)!.join(', ')})`);
         }
@@ -42,9 +57,12 @@ for (let i = 0; i < urls.length; i += 8) {
     }),
   );
 }
+if (limited.length) {
+  console.warn(`check:links: ${limited.length} URL(s) unchecked, host rate-limited (429):\n  ${limited.join('\n  ')}`);
+}
 if (bad.length) {
   console.error(bad.join('\n'));
   console.error(`\ncheck:links FAILED: ${bad.length} of ${urls.length} URL(s)`);
   process.exit(1);
 }
-console.log(`check:links passed: ${urls.length} URL(s)`);
+console.log(`check:links passed: ${urls.length - limited.length} of ${urls.length} URL(s) checked, none broken`);
