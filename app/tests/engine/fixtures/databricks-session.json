@@ -1,0 +1,50 @@
+{
+  "kind": "decision-workshop-session",
+  "schema_version": 1,
+  "pack": "databricks",
+  "pack_release": "2026.10.18",
+  "session_id": "fixture-databricks",
+  "client_name": "Contoso Ltd",
+  "show_proposed": false,
+  "decisions": [
+    {
+      "topic_id": "medallion_layers",
+      "decision_key": "medallion.layers",
+      "status": "decided",
+      "chosen": ["bronze_silver_gold_mart"],
+      "values": {},
+      "modifiers": { "landing_volume": false },
+      "naming": {},
+      "option_notes": {},
+      "notes": "Three business domains need their own shaped tables",
+      "decided_at": "2026-10-18T10:00:00Z"
+    },
+    {
+      "topic_id": "bi_serving_pattern",
+      "decision_key": "bi.pattern",
+      "status": "decided",
+      "chosen": ["native"],
+      "values": {},
+      "modifiers": {},
+      "naming": {},
+      "option_notes": {},
+      "notes": "",
+      "decided_at": "2026-10-18T10:02:00Z"
+    },
+    {
+      "topic_id": "query_mode",
+      "decision_key": "bi.query_mode",
+      "status": "decided",
+      "chosen": ["metric_views"],
+      "values": {},
+      "modifiers": {},
+      "naming": {},
+      "option_notes": {},
+      "notes": "",
+      "decided_at": "2026-10-18T10:05:00Z"
+    }
+  ],
+  "locked": false,
+  "created_at": "2026-10-18T09:00:00Z",
+  "updated_at": "2026-10-18T10:05:00Z"
+}

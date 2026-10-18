@@ -1,0 +1,39 @@
+{
+  "kind": "decision-workshop-session",
+  "schema_version": 1,
+  "pack": "fabric",
+  "pack_release": "2026.10.18",
+  "session_id": "fixture-fabric",
+  "client_name": "Northwind AG",
+  "facilitator": "Sylwester Lachiewicz",
+  "show_proposed": false,
+  "decisions": [
+    {
+      "topic_id": "medallion_layers",
+      "decision_key": "medallion.layers",
+      "status": "decided",
+      "chosen": ["bronze_silver_gold"],
+      "values": {},
+      "modifiers": { "landing_zone": true },
+      "naming": {},
+      "option_notes": {},
+      "notes": "",
+      "decided_at": "2026-10-18T10:00:00Z"
+    },
+    {
+      "topic_id": "query_mode",
+      "decision_key": "bi.query_mode",
+      "status": "decided",
+      "chosen": ["direct_lake_sql"],
+      "values": {},
+      "modifiers": {},
+      "naming": {},
+      "option_notes": {},
+      "notes": "Existing row-level rules live on the SQL analytics endpoint",
+      "decided_at": "2026-10-18T10:05:00Z"
+    }
+  ],
+  "locked": false,
+  "created_at": "2026-10-18T09:00:00Z",
+  "updated_at": "2026-10-18T10:05:00Z"
+}
