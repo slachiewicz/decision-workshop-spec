@@ -68,6 +68,7 @@ options:
     cons:
       - Charged as the Enhanced Security and Compliance add-on
       - Some features are limited on workspaces with the profile enabled
+      - Customer-managed keys need the Enterprise tier (AWS) or Premium plan (Azure)
     adr_context: >-
       A regulated posture was chosen. The compliance security profile is enabled on workspaces
       that process regulated data, with the required standards selected, and customer-managed

@@ -26,7 +26,7 @@ options:
       - Account console and workspaces can have separate allow and block lists
     cons:
       - Traffic still crosses the public internet
-      - IP access lists need the Enterprise tier on AWS and cannot filter private-link traffic
+      - IP access lists need Enterprise (AWS) or Premium (Azure), hold up to 1,000 entries and can't filter Private Link traffic
       - Strict regulatory or customer policies may not accept public endpoints
     adr_context: >-
       Public endpoints with access controls were chosen. Access to the workspace and account

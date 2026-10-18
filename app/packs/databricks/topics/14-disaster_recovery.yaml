@@ -9,7 +9,7 @@ situation: >-
 intake:
   - What recovery time and data-loss limit (RTO and RPO) does the business accept after a regional outage?
   - Which workloads must run in the second region, and which can wait until the primary returns?
-  - Do you hold the Enterprise plan and the Mission Critical add-on that managed disaster recovery requires?
+  - Do you hold the plan (Enterprise on AWS, Premium on Azure) and Mission Critical support that managed disaster recovery requires?
   - Does your chosen region have a supported pair for managed disaster recovery?
 recommendation_note: ''
 adr_context: >-
@@ -51,18 +51,21 @@ options:
       - Workspace asset IDs are preserved across regions
     cons:
       - Access is gated, so you must apply through your Databricks account team
-      - Needs the Enterprise plan, the Mission Critical add-on, serverless, and a workspace and metastore in each region
+      - Needs Enterprise (AWS) or Premium (Azure), Mission Critical, serverless, and a workspace and metastore per region. Not on GCP
+      - Doesn't replicate pipelines, materialized views, streaming tables, managed volumes, secrets, models or published dashboards
       - External tables and external volumes replicate metadata only
       - On Azure only listed regions are supported, and some region pairs are not allowed
     adr_context: >-
       Managed disaster recovery was chosen. Databricks replicates Unity Catalog metadata, managed
       tables and workspace assets to a secondary region and runs failover. The prerequisites
-      were confirmed: Enterprise plan, the Mission Critical add-on, serverless compute, and a
+      were confirmed: the required plan, Mission Critical, serverless compute, and a
       workspace and metastore in each region.
     maturity: gated
     as_of: '2026-10-18'
     sources:
       - url: https://docs.databricks.com/aws/en/admin/managed-disaster-recovery
+        title: Managed disaster recovery
+      - url: https://learn.microsoft.com/azure/databricks/admin/managed-disaster-recovery
         title: Managed disaster recovery
       - url: https://learn.microsoft.com/azure/databricks/resources/feature-region-support
         title: Features with limited regional availability
@@ -78,6 +81,7 @@ options:
       - You write and operate the sync, and keep identities, secrets and permissions aligned
       - Recovery time and data loss depend on how often you replicate
       - Needs regular failover tests
+      - Deep clone isn't supported on tables with row filters, column masks or ABAC policies
     adr_context: >-
       A self-built active-passive setup was chosen. Infrastructure and code are deployed to both
       regions from Git, and managed table data is copied with Delta Deep Clone on a schedule
@@ -89,17 +93,19 @@ options:
         title: Disaster recovery
       - url: https://docs.databricks.com/aws/en/tables/operations/clone
         title: Clone a table on Databricks
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/
+        title: Row filters and column masks
   - value: active_active
     label: Active-active
-    description: Production jobs run in both regions at all times, and each job counts as done only when both succeed.
+    description: Production jobs run in both regions at all times, and a job is done only when both runs succeed.
     tradeoff: Lowest recovery time and data loss, and the highest cost and complexity.
     pros:
       - Lowest RTO and RPO of the strategies
       - The second region runs the same processes in parallel, so it stays current
     cons:
       - Jobs run in both regions, which costs more than any other strategy
-      - Production objects can only change through strict CI/CD promotion
-      - Operations must confirm each job in both regions
+      - Production changes must go through CI/CD to both regions
+      - Operations must check that each job succeeded in both regions
     adr_context: >-
       Active-active was chosen. All data processes run in both regions in parallel, production
       changes are deployed to both through CI/CD only, and jobs are marked complete when they
@@ -113,3 +119,7 @@ rule_reasons:
   needs_multi_region: Cross-region recovery needs a second region, so choose more than one region in the region decision.
   managed_dr_serverless: Managed disaster recovery needs serverless compute in both workspaces, so select at least one serverless option in the compute decision.
   secondary_region: A DIY active-passive setup needs a second region to fail over to, so choose more than one region in the region decision.
+  dr_secured_tables: Managed DR can't replicate tables with row filters, column masks or ABAC policies; they fail to replicate and hold up the recovery point.
+  dr_pipelines: Managed DR doesn't replicate Lakeflow pipelines, materialized views or streaming tables; they must be redeployed in the secondary region.
+  dr_archival: Managed DR can't replicate tables with Delta archival support until archived files are restored and the property is unset.
+  clone_secured_tables: Deep clone isn't supported on tables with row filters, column masks or ABAC policies, so those tables need another copy method.

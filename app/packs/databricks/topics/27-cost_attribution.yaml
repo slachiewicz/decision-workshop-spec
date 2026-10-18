@@ -10,7 +10,7 @@ intake:
   - Do finance or business units expect to be charged back for platform use, or is it a shared cost centre?
   - How much of your usage is serverless (SQL, jobs, notebooks, apps) and how much is classic compute?
   - Who should be alerted when a team or project passes its expected spend?
-recommendation_note: Chargeback needs tags. Tag classic compute with cluster tags, tag serverless with usage policies, and query system.billing.usage.
+recommendation_note: 'Chargeback needs tags: cluster tags on classic compute, usage policies on serverless (preview, no GA alternative), and system.billing.usage for reporting.'
 adr_context: >-
   Cost is attributed from the billable usage system table. Classic compute carries cluster
   tags, serverless compute carries tags from serverless usage policies, and budgets alert
@@ -49,6 +49,7 @@ options:
     cons:
       - Serverless usage policies are in Public Preview
       - Untagged usage needs a rule, or it lands in a shared bucket
+      - Policies don't tag classic compute, aren't applied to existing jobs and notebooks, and job-triggered pipelines don't inherit them
     adr_context: >-
       Chargeback from system.billing.usage was chosen. Classic compute is tagged with cluster
       tags, serverless workloads with serverless usage policies, and budgets provide alerts.

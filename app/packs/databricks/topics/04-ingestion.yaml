@@ -23,7 +23,7 @@ options:
     tradeoff: Least code and automatic schema handling, but only for the sources and release states supported.
     pros:
       - Handles source authentication, retries and schema evolution for you
-      - Database connectors use change data capture
+      - Database connectors use change data capture or scheduled queries
       - Runs on serverless compute by default and is governed by Unity Catalog
     cons:
       - Connectors are in different release states, so each one needs checking

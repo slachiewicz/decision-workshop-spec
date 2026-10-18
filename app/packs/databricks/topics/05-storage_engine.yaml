@@ -19,7 +19,7 @@ options:
   - value: managed_tables
     label: Managed tables
     description: Unity Catalog manages storage, optimisation and lifecycle for Delta Lake and Apache Iceberg tables.
-    tradeoff: Lowest effort and cost, but files live in Unity Catalog's managed locations.
+    tradeoff: Unity Catalog handles storage and maintenance for you, but files live in Unity Catalog's managed locations.
     pros:
       - Automatic optimisation such as compaction and statistics, with predictive optimization
       - Data files are deleted after the recovery period when a table is dropped

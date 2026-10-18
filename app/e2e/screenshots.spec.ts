@@ -1,8 +1,10 @@
 import { test } from '@playwright/test';
 import { sessionId, startSession } from './helpers';
 
-// Regenerates the committed screenshots in e2e/screenshots/.
+// Regenerates the committed screenshots in e2e/screenshots/. Opt-in, so ordinary test runs
+// don't rewrite the PNGs:  SCREENSHOTS=1 npm run test:e2e -- screenshots
 test('screenshots: topic page and sign-off page', async ({ page }) => {
+  test.skip(!process.env.SCREENSHOTS, 'set SCREENSHOTS=1 to regenerate the screenshots');
   await page.setViewportSize({ width: 1440, height: 1000 });
   await startSession(page, 'fabric', 'Contoso');
   const sid = sessionId(page.url());

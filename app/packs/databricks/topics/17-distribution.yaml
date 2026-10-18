@@ -72,6 +72,7 @@ options:
     cons:
       - Billed per hour while running, and apps per workspace are limited
       - Needs developers and a deployment process
+      - Needs a Premium tier workspace
     adr_context: >-
       Databricks Apps were chosen for interfaces that dashboards cannot provide, such as data
       entry forms and operational tools. Apps are deployed through source control, and each

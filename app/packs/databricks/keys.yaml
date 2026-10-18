@@ -258,9 +258,13 @@ topics:
         requires:
           - { decision_key: platform.region, in: [multi_region], severity: block, reason_id: needs_multi_region }
           - { decision_key: cap.strategy, any_of: [serverless_jobs, serverless_sql, serverless_notebooks], severity: block, reason_id: managed_dr_serverless }
+          - { decision_key: sec.rls_pattern, none_of: [row_filters_masks, abac], severity: warn, reason_id: dr_secured_tables }
+          - { decision_key: platform.transform_tool, none_of: [lakeflow_pipelines, sql_materialized], severity: warn, reason_id: dr_pipelines }
+          - { decision_key: gov.retention, not_in: [windows_archive], severity: warn, reason_id: dr_archival }
       - value: diy_active_passive
         requires:
           - { decision_key: platform.region, in: [multi_region], severity: warn, reason_id: secondary_region }
+          - { decision_key: sec.rls_pattern, none_of: [row_filters_masks, abac], severity: warn, reason_id: clone_secured_tables }
       - value: active_active
         requires:
           - { decision_key: platform.region, in: [multi_region], severity: block, reason_id: needs_multi_region }
@@ -426,7 +430,7 @@ topics:
       - value: abac
         canvas_effect: { type: lock, scope: all }
         requires:
-          - { decision_key: sec.access_management, in: [account_groups], severity: block, reason_id: abac_account_principals }
+          - { decision_key: sec.access_management, in: [account_groups], severity: warn, reason_id: abac_account_principals }
       - { value: dynamic_views, canvas_effect: { type: lock, scope: all } }
 
   - number: 24
@@ -684,4 +688,6 @@ topics:
     options:
       - { value: time_travel_defaults }
       - { value: extended_retention_undrop }
-      - { value: deep_clone_backups }
+      - value: deep_clone_backups
+        requires:
+          - { decision_key: sec.rls_pattern, none_of: [row_filters_masks, abac], severity: warn, reason_id: clone_secured_tables }

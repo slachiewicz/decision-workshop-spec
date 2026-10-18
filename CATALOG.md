@@ -102,8 +102,10 @@ Databricks (proposed):
 - `ops.deployment = bundles_ci` requires `ops.git_platform not_in {none}` (block). Bundles alone can deploy from any checkout. CI needs a repository.
 - `storage.engine = external_only` (warn): predictive optimisation runs only on managed tables.
 - `isolation = catalog_per_env` with `environments = single_env` (warn): the catalog split adds nothing.
-- `security any_of {abac}` requires `access.groups in {account_groups}` (block). UC grants and policies target account-level principals, created through SCIM or by hand. Workspace-local groups don't work.
+- `security any_of {abac}` with `access_management` other than account groups (warn). Unity Catalog grants and policies accept account-level groups only; workspace-local groups can't be used. Policies themselves can target users, groups or service principals.
 - `dr in {managed_dr, active_active}` requires `region = multi_region` (block).
+- `dr = managed_dr` requires a serverless compute option in #9 (block), and warns when #23 uses row filters, masks or ABAC, when #6 uses Lakeflow pipelines or materialized views and streaming tables, or when #25 uses archival. Managed DR doesn't replicate any of those.
+- `dr = diy_active_passive` and `backup = deep_clone_backups` warn when #23 uses row filters, masks or ABAC, because deep clone isn't supported on those tables.
 
 ## Canvas presets
 

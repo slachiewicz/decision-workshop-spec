@@ -53,7 +53,7 @@ options:
       Ownership is recorded per data product through domains, governed tags and certification.
       Each product has a named owner group, and the Discover page presents products by domain
       for consumers.
-    maturity: preview
+    maturity: ga
     as_of: '2026-10-18'
     sources:
       - url: https://docs.databricks.com/aws/en/uc-semantics/domains

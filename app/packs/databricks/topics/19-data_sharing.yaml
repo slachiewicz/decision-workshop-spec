@@ -18,7 +18,7 @@ options:
   - value: delta_sharing
     label: OpenSharing (formerly Delta Sharing)
     description: Read-only shares of Unity Catalog data to Databricks users or, through open connectors, to any platform.
-    tradeoff: Zero-copy sharing with audit, but each recipient must be set up and shares need an owner.
+    tradeoff: Recipients read the data in place with audit, but each recipient must be set up and shares need an owner.
     pros:
       - Recipients on Databricks use their own Unity Catalog and see shared tables as a catalog
       - Open sharing works for recipients on other platforms
@@ -68,7 +68,7 @@ options:
       - Uses OpenSharing, so delivery stays governed in Unity Catalog
       - Can serve as an internal catalogue of data products
     cons:
-      - Publishing needs a provider profile and an approval flow
+      - Public listings need approval through the Data Partner Program; private exchanges need an account admin, Premium and a provider profile
       - Commercial listings add legal and support work
     adr_context: >-
       Databricks Marketplace was chosen to publish and consume listings. Providers are

@@ -19,7 +19,7 @@ options:
   - value: isolated_minimised
     label: Isolated schema, masks and retention
     description: Personal data sits in its own schemas with column masks, downstream layers hold only what is needed, and deletes are purged.
-    tradeoff: Strongest control and easier deletion, but pipelines need extra design and review.
+    tradeoff: Personal data is confined to few readers and is simpler to delete, but pipelines need extra design and review.
     pros:
       - Grants to the isolated schema can be limited to a small group
       - Masks show analysts pseudonymised values by default

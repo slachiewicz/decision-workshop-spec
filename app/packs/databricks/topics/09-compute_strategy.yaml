@@ -46,9 +46,9 @@ options:
   - value: serverless_sql
     label: Serverless SQL warehouses
     description: SQL warehouses that run on Databricks-managed infrastructure and start in seconds.
-    tradeoff: Best startup and scaling for BI and SQL, but it needs the Premium plan and a supported workspace.
+    tradeoff: Starts in seconds and scales with queued queries for BI and SQL, but needs the Premium plan and a supported workspace.
     pros:
-      - Typical startup of 2 to 6 seconds and rapid scaling when queries queue
+      - Starts in seconds and scales out when queries queue
       - Includes Photon, Predictive IO and Intelligent Workload Management
       - No instances to size or patch
     cons:
@@ -73,7 +73,7 @@ options:
       - Quick connection without waiting for a cluster
       - Releases roll out to everyone, so there is no runtime version to pick
     cons:
-      - Some features and libraries are limited on serverless
+      - No Scala or R notebooks, JAR libraries, compute policies or init scripts; runs are capped at 7 days
       - Cost attribution uses serverless usage policies, which are in preview
     adr_context: >-
       Serverless compute was chosen for notebooks. Interactive users connect to managed compute

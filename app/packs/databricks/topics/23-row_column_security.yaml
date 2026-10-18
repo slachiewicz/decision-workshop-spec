@@ -62,10 +62,11 @@ options:
     pros:
       - Databricks recommends it for consistent filtering across many tables
       - New tables are protected as soon as they are tagged
-      - Data classification can tag sensitive columns automatically
+      - Data classification can tag sensitive columns once automatic tagging is on; policies are still written separately
     cons:
       - Wrong or missing tags leave data unprotected
       - Metastore-level policies and DENY policies are still in Beta
+      - Needs serverless or Databricks Runtime 16.4+; older standard compute can't read ABAC-secured tables
     adr_context: >-
       Attribute-based access control was chosen. Governed tags mark sensitive columns, and
       policies at catalog or schema level apply masks and filters to them, so new tables
@@ -75,6 +76,8 @@ options:
     sources:
       - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/
         title: Attribute-based access control in Unity Catalog
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac/requirements
+        title: Requirements, quotas, and limitations for row filter and column mask policies
       - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-classification
         title: Data Classification
   - value: dynamic_views
@@ -97,4 +100,4 @@ options:
       - url: https://docs.databricks.com/aws/en/views/dynamic
         title: Create a dynamic view
 rule_reasons:
-  abac_account_principals: ABAC policies name groups in their TO clause, which need to be account-level groups. Use account-level groups, or choose another mechanism.
+  abac_account_principals: Unity Catalog grants and policies accept account-level groups only; workspace-local groups can't be used.

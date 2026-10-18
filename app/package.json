@@ -12,7 +12,8 @@
     "check:packs": "tsx scripts/lint-packs.ts",
     "check:engine": "vitest run tests --passWithNoTests",
     "check": "npm run typecheck && npm run check:packs && npm run check:engine",
-    "check:links": "tsx scripts/check-links.ts"
+    "check:links": "tsx scripts/check-links.ts",
+    "screenshots": "SCREENSHOTS=1 playwright test screenshots"
   },
   "dependencies": {
     "react": "19.3.0",

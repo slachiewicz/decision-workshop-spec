@@ -43,7 +43,7 @@ options:
       - Delta retention settings and VACUUM make the window enforceable
       - Predictive optimization can run VACUUM on managed tables
     cons:
-      - Archival support for cloud lifecycle policies is in Public Preview
+      - Archival support for AWS and Azure archive tiers is in Public Preview
       - Queries that scan full history fail on archived files
     adr_context: >-
       Retention windows with archival were chosen. Each dataset has an online window, data

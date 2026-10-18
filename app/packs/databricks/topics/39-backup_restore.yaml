@@ -51,11 +51,12 @@ options:
       - Old files stay in storage, so storage cost grows with retention
       - It is still the same table, so deleting it or its storage loses everything
       - UNDROP does not restore primary and foreign key constraints
+      - Configurable recovery periods (0 hours or 7 to 30 days) are in Public Preview
     adr_context: >-
       Longer retention was set on tables that need a wider restore window, together with a longer
       UNDROP recovery period at catalog or schema level. Storage growth is monitored, and this is
       not treated as a substitute for an independent backup.
-    maturity: ga
+    maturity: preview
     as_of: '2026-10-18'
     sources:
       - url: https://docs.databricks.com/aws/en/tables/history
@@ -76,6 +77,7 @@ options:
       - Doubles storage for cloned tables, and the clone job costs compute
       - Table history, descriptions and Unity Catalog tags are not copied
       - Streaming tables and materialized views cannot be cloned
+      - Deep clone isn't supported on tables with row filters, column masks or ABAC policies
     adr_context: >-
       Scheduled deep clones were chosen for key tables. Independent copies are written to a
       separate catalog or storage location on a schedule matched to the recovery point the
@@ -87,3 +89,7 @@ options:
         title: Clone a table on Databricks
       - url: https://docs.databricks.com/aws/en/tables/history
         title: Work with table history
+      - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/
+        title: Row filters and column masks
+rule_reasons:
+  clone_secured_tables: Deep clone isn't supported on tables with row filters, column masks or ABAC policies, so those tables need another copy method.

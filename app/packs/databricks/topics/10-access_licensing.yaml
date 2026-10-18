@@ -9,6 +9,7 @@ intake:
   - How many people build pipelines and notebooks, how many write SQL, and how many only view dashboards or ask Genie questions?
   - Should dashboard viewers see the same rows as the publisher, or only the rows their own permissions allow?
   - Do viewers need to be workspace members, or can they be account users with no workspace?
+  - From 14 September 2026 the users group carries no entitlements by default; who will grant them explicitly?
 recommendation_note: ''
 adr_context: >-
   Entitlements were assigned by role. Builders receive Workspace access, analysts receive
@@ -57,7 +58,7 @@ options:
     description: A simplified workspace view for running shared dashboards, Genie Agents and Databricks Apps.
     tradeoff: Fits viewers well and keeps them out of build tools, but they cannot create or edit anything.
     pros:
-      - View-only access without a special licence
+      - View-only access, with no builder entitlement needed
       - Can run shared dashboards, Genie Agents and Apps
       - Can query SQL warehouses through BI tools
     cons:

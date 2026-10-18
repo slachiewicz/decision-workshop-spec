@@ -64,7 +64,7 @@ options:
   - value: full_observability
     label: Full observability
     description: Alerts and reviews plus data quality monitoring on tables, and logs and metrics fed to an external monitoring tool.
-    tradeoff: Best coverage and fastest diagnosis, but more tooling, cost and people to run it.
+    tradeoff: Covers jobs, data quality and external telemetry in one setup, but needs more tooling, cost and people to run it.
     pros:
       - Data quality monitoring flags stale or incomplete tables without hand-written checks
       - One place can show platform, application and data signals

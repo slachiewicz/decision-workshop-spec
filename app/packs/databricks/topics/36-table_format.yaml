@@ -45,7 +45,7 @@ options:
     cons:
       - Needs column mapping and Databricks Runtime 14.3 LTS or above for writes
       - Iceberg metadata is generated asynchronously, which adds driver load
-      - Cannot be combined with deletion vectors
+      - Deletion vectors aren't supported for Iceberg v2 reads; use Iceberg v3 or purge them with REORG
       - Enabling it upgrades the writer protocol, which can affect external Delta writers
     adr_context: >-
       Delta with Iceberg reads was chosen so that Iceberg clients can read selected tables from
@@ -68,6 +68,7 @@ options:
       - Needs Databricks Runtime 16.4 LTS or above and serverless compute for metadata maintenance
       - External engines cannot read Unity Catalog views
       - Credential vending is not supported on workspaces that use default storage
+      - Can only be created when predictive optimization is enabled
     adr_context: >-
       Managed Iceberg tables were chosen because external engines need to read and write the
       tables through the Iceberg REST catalog. Unity Catalog manages snapshots and compaction,
