@@ -2,23 +2,24 @@ id: platform_centralization
 title: Platform centralisation
 situation: >-
   A central team can own all data and serve every consumer, or it can own a shared backbone and
-  let business domains build their own marts on top. The first keeps one set of standards and a
-  single queue of work. The second moves ownership of data products to the people who know the
+  let business domains build and own their Gold data products on top. The first keeps one set of
+  standards and a single queue of work. The second moves ownership of data products to the people who know the
   data, and relies on shared governance to keep them consistent.
 intake:
   - Is a single central data team a bottleneck for delivery today, or is it the only team with the skills?
   - Do business domains have people who can own the quality of their own data products?
   - Which standards must every domain meet, such as endorsement, documented schemas or SLAs?
-recommendation_note: A central backbone with domain marts gives domains autonomy while identity, security and lineage stay central.
+recommendation_note: A central backbone with domain Gold workspaces gives domains autonomy while identity, security and lineage stay central.
 adr_context: >-
-  A central backbone with domain marts was chosen. A central team owns ingestion and the shared
-  conformed layers, and each business domain builds and owns its own marts on top. Identity,
+  A central backbone with domain Gold workspaces was chosen. A central team owns ingestion and
+  the shared Bronze and Silver layers, and each business domain builds and owns its own Gold
+  workspace on top. Identity,
   security and lineage stay central, which follows the domain-oriented data mesh pattern that
   Microsoft describes for OneLake.
 options:
   - value: backbone_marts
-    label: Central backbone with domain marts
-    description: A central team runs ingestion and shared layers. Domains own the marts and data products built on them.
+    label: Central backbone with domain Gold workspaces
+    description: A central team runs ingestion and shared layers. Domains own the Gold workspaces and data products built on them.
     tradeoff: Domains move at their own pace, but they need clear standards and a named owner each.
     pros:
       - Removes the single central queue for domain-specific tables
@@ -30,9 +31,9 @@ options:
       - Two kinds of teams to support, central and domain
       - Domain owners must be named and kept current
     adr_context: >-
-      The platform was split into a central backbone and domain marts. The central team keeps
-      ingestion, shared layers, identity and lineage, and each domain owns its marts as a data
-      product with a named owner.
+      The platform was split into a central backbone and domain Gold workspaces. The central team
+      keeps ingestion, shared layers, identity and lineage, and each domain owns its Gold
+      workspace as a data product with a named owner.
     maturity: ga
     as_of: '2026-10-18'
     sources:

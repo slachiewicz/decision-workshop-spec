@@ -31,7 +31,7 @@ options:
     adr_context: >-
       Lakeflow Connect managed connectors were chosen for the sources they support. They take
       over authentication, incremental reads and schema changes, and write to streaming tables
-      governed by Unity Catalog. Connectors in preview are listed with their release state.
+      governed by Unity Catalog. Each connector's release state is shown on its docs page.
     maturity: ga
     as_of: '2026-10-18'
     sources:

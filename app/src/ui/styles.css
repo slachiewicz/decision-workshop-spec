@@ -125,6 +125,10 @@ h4 {
   font-size: 0.95rem;
   margin: 0 0 0.25em;
 }
+.pc-head {
+  font-size: 0.95rem;
+  margin: 0 0 0.25em;
+}
 p {
   margin: 0.4em 0 0.8em;
 }
@@ -876,4 +880,7 @@ fieldset.panel legend {
   .adr a {
     color: #0b3a99;
   }
+}
+.switch .badge {
+  margin-left: 0.4rem;
 }

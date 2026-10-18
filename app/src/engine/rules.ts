@@ -65,7 +65,8 @@ export function visibleTopics(pack: Pack, session: Session): Topic[] {
 type Resolved = { known: true; values: string[] } | { known: false; title: string };
 
 /** Current value(s) of a decision key: a topic's chosen options, or a modifier's on/off value. */
-function resolve(pack: Pack, session: Session, key: string): Resolved {
+/** With `field`, the value is that value field of the decision (unset counts as not decided). */
+function resolve(pack: Pack, session: Session, key: string, field?: string): Resolved {
   const owner = pack.topics.find((t) => t.modifiers.some((m) => m.decision_key === key));
   if (owner) {
     const rec = findRecord(session, owner.id);
@@ -77,6 +78,10 @@ function resolve(pack: Pack, session: Session, key: string): Resolved {
   const rec = topic ? findRecord(session, topic.id) : findRecordByKey(session, key);
   const title = topic?.title ?? key;
   if (!rec || rec.status !== 'decided') return { known: false, title };
+  if (field) {
+    const v = rec.values[field]?.trim();
+    return v ? { known: true, values: [v] } : { known: false, title };
+  }
   if (rec.chosen.length === 0 && topic?.decision_type !== 'confirm') return { known: false, title };
   return { known: true, values: rec.chosen };
 }
@@ -96,7 +101,7 @@ export function evaluateParts(pack: Pack, topic: Topic, option: Option, session:
   const warns: string[] = [];
   const pendings: string[] = [];
   for (const req of option.requires ?? []) {
-    const r = resolve(pack, session, req.decision_key);
+    const r = resolve(pack, session, req.decision_key, req.field);
     if (!r.known) {
       const text = `Depends on ${r.title}, not decided yet`;
       if (!pendings.includes(text)) {
@@ -129,10 +134,12 @@ export function chosenOptions(topic: Topic, rec: DecisionRecord | undefined): Op
   return topic.options.filter((o) => rec.chosen.includes(o.value));
 }
 
-/** A decided topic whose chosen option now evaluates to `blocked`. Never cleared silently. */
+/** A decided topic whose chosen option now evaluates to `blocked`, or is no longer an option. Never cleared silently. */
 export function needsReview(pack: Pack, topic: Topic, session: Session): boolean {
   const rec = findRecord(session, topic.id);
   if (rec?.status !== 'decided') return false;
+  // A chosen value the topic no longer offers (a stale import) also needs review.
+  if (rec.chosen.some((v) => !topic.options.some((o) => o.value === v))) return true;
   return chosenOptions(topic, rec).some((o) => evaluate(pack, topic, o, session).state === 'blocked');
 }
 

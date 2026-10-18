@@ -11,6 +11,7 @@ import {
 const clean = (s: string) => s.replace(/\s+/g, ' ').trim();
 const sentenceEnd = (s: string) => (/[.!?]$/.test(s) ? s : `${s}.`);
 const cell = (s: string) => s.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+const lowerFirst = (s: string) => (/^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 function labelsOf(topic: Topic, values: string[]): string[] {
@@ -57,7 +58,8 @@ function namingTable(topic: Topic, rec: DecisionRecord): string {
     for (const f of sec.fields) {
       const v = rec.naming[f.id];
       const isDefault = v === undefined || v === f.default;
-      const shown = `${v ?? f.default}${isDefault ? ' (default)' : ''}`;
+      const pattern = (v ?? f.default).replace(/`/g, '');
+      const shown = `${pattern ? `\`${pattern}\`` : ''}${isDefault ? ' (default)' : ''}`;
       rows.push(`| ${cell(sec.title)} | ${cell(f.label)} | ${cell(shown)} |`);
     }
   }
@@ -73,7 +75,10 @@ function decidedSection(pack: Pack, session: Session, topic: Topic, rec: Decisio
 
   const bullets = [
     ...valueFieldLines(pack, topic, rec, chosen),
-    ...topic.modifiers.map((m) => `- ${m.title}: ${rec.modifiers[m.id] ? 'On' : 'Off'}`),
+    ...topic.modifiers.map((m) => {
+      const on = !!rec.modifiers[m.id];
+      return `- ${m.title}: ${on ? 'On' : m.recommended ? 'Off (suggested: On)' : 'Off'}`;
+    }),
   ];
   if (bullets.length) out.push(bullets.join('\n'));
 
@@ -123,11 +128,12 @@ function decidedSection(pack: Pack, session: Session, topic: Topic, rec: Decisio
     }
   }
   if (!isConfirm && alternatives.length) out.push(`**Alternatives considered:** ${alternatives.join('; ')}`);
-  if (ruledOut.length) out.push(`**Not available (ruled out by earlier decisions):** ${ruledOut.join('; ')}`);
-  if (warnings.length) out.push(`**Warnings:** ${warnings.join('; ')}`);
+  const list = (items: string[]) => items.map((i) => `- ${i}`).join('\n');
+  if (ruledOut.length) out.push(`**Not available (ruled out by earlier decisions):**\n${list(ruledOut)}`);
+  if (warnings.length) out.push(`**Warnings:**\n${list(warnings)}`);
   if (review.length) out.push(`**Needs review (now ruled out by an earlier decision):** ${review.join('; ')}`);
 
-  const maturity = chosen.filter((o) => o.maturity !== 'ga').map((o) => `${o.label}: ${o.maturity}`);
+  const maturity = chosen.filter((o) => o.maturity !== 'ga').map((o) => `${o.label}: ${o.maturity}${o.maturity_note ? ` (${lowerFirst(clean(o.maturity_note))})` : ''}`);
   if (maturity.length) out.push(`**Maturity:** ${maturity.join('; ')}`);
 
   if (notes) out.push(`**Notes:** ${clean(notes)}`);
@@ -145,13 +151,27 @@ function summary(pack: Pack, session: Session, topics: Topic[]): string {
     `${decided.length} of ${topics.length} topics were decided, ${open} left open and ${parked} parked.`,
   );
 
-  const pick = (id: string) => {
-    const l = chosenLabels(pack, session, id);
-    return l.length ? l.join(', ') : 'not yet decided';
-  };
-  sentences.push(
-    `The platform uses ${pick('medallion_layers')}, isolated by ${pick('isolation_strategy')}, with ${pick('environments')}.`,
-  );
+  const and = (l: string[]) => (l.length > 1 ? `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}` : (l[0] ?? ''));
+  const extras = [
+    { name: 'Storage', id: 'storage_engine' },
+    { name: 'transformation', id: 'transform_tool' },
+    { name: 'BI query mode', id: 'query_mode' },
+  ]
+    .map(({ name, id }) => ({ name, labels: chosenLabels(pack, session, id) }))
+    .filter((e) => e.labels.length > 0)
+    .map((e) => `${e.name}: ${and(e.labels)}`);
+  const extraSentence = extras.length === 0 ? '' : ` ${extras.join('; ')}.`;
+  // Only decided parts are named; an undecided part is left out rather than spelled out.
+  const layers = chosenLabels(pack, session, 'medallion_layers');
+  const iso = chosenLabels(pack, session, 'isolation_strategy');
+  const envs = chosenLabels(pack, session, 'environments');
+  const shape =
+    layers.length || iso.length || envs.length
+      ? `The platform uses ${layers.length ? and(layers) : 'medallion layers not yet decided'}` +
+        `${iso.length ? `, isolated by ${and(iso)}` : ''}${envs.length ? ` across ${and(envs)}` : ''}.`
+      : '';
+  const second = `${shape}${extraSentence}`.trim();
+  if (second) sentences.push(second);
 
   const departed = decided.filter(({ topic, rec }) => {
     const rv = effectiveRecommendation(pack, topic, session).values;
@@ -177,7 +197,7 @@ function summary(pack: Pack, session: Session, topics: Topic[]): string {
   );
   if (risky.length) {
     sentences.push(
-      `${risky.length} ${plural(risky.length, 'option relies', 'options rely')} on features in preview or gated access: ${risky.map((o) => o.label).join(', ')}.`,
+      `${risky.length} ${plural(risky.length, 'option relies', 'options rely')} on features in preview or gated access: ${risky.map((o) => (o.maturity_note ? `${o.label} (${lowerFirst(clean(o.maturity_note))})` : o.label)).join(', ')}.`,
     );
   }
   return sentences.join(' ');

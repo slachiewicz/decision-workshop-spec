@@ -25,6 +25,8 @@ export type Severity = 'block' | 'warn';
 /** One condition on another decision. Exactly one operator is set. */
 export interface Requirement {
   decision_key: string;
+  /** Test a value field of the referenced decision instead of its chosen options. */
+  field?: string;
   /** single-select: current value is one of these */
   in?: string[];
   /** single-select: current value is none of these */
@@ -69,6 +71,8 @@ export interface ModifierKey {
   decision_key: string;
   on_value: string;
   off_value: string;
+  /** The suggested setting is on. The ADR notes when a recommended modifier is left off. */
+  recommended?: boolean;
   canvas_effect?: CanvasEffect;
 }
 
@@ -118,6 +122,8 @@ export interface OptionProse {
   /** ADR "Context" text used when this option is chosen against the recommendation. */
   adr_context: string;
   maturity: Maturity;
+  /** Which part is not GA, when the option as a whole is a posture rather than one feature. */
+  maturity_note?: string;
   as_of: string; // YYYY-MM-DD
   sources: Source[];
   value_field_labels?: Record<string, { label: string; hint?: string }>;

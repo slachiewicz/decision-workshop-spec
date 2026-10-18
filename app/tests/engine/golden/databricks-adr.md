@@ -6,7 +6,7 @@ _Pack release 2026.10.18_
 
 ## Executive summary
 
-2 of 2 topics were decided, 0 left open and 0 parked. The platform uses Bronze, Silver, Gold, Mart, isolated by not yet decided, with not yet decided. 1 decision departs from the suggested default: Medallion layers.
+2 of 2 topics were decided, 0 left open and 0 parked. The platform uses Bronze, Silver, Gold, Mart. BI query mode: Unity Catalog metric views. 1 decision departs from the suggested default: Medallion layers.
 
 ## Decisions
 

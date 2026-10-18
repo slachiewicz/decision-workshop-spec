@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import { effectiveRecommendation, evaluate, findRecord, needsReview, visibleTopics } from '../engine/rules';
 import { setDecision } from '../engine/session';
 import type { DecisionRecord, Maturity, Option, Topic, ValueFieldKey } from '../packs/types';
@@ -125,7 +125,7 @@ function OptionCard({
       )}
       <div className="proscons">
         <div>
-          <h4>Pros</h4>
+          <h3 className="pc-head">Pros</h3>
           <ul>
             {option.pros.map((p) => (
               <li key={p}>{p}</li>
@@ -133,7 +133,7 @@ function OptionCard({
           </ul>
         </div>
         <div>
-          <h4>Cons</h4>
+          <h3 className="pc-head">Cons</h3>
           <ul>
             {option.cons.map((p) => (
               <li key={p}>{p}</li>
@@ -204,7 +204,7 @@ function NamingForm({ topic, rec, onChange, disabled }: { topic: Topic; rec: Dec
   );
 }
 
-export function TopicPage({ tid }: { tid: string }) {
+export function TopicPage({ tid, canvasSlot }: { tid: string; canvasSlot?: ReactNode }) {
   const { pack, session, apply } = useWorkshop();
   const statusOf = useTopicStatus();
   const sid = session.session_id;
@@ -269,7 +269,7 @@ export function TopicPage({ tid }: { tid: string }) {
 
       {review && (
         <div className="banner banner-warn" role="alert">
-          <strong>Needs review.</strong> An earlier decision now rules out the option chosen here. Pick another option, or revisit the earlier decision.
+          <strong>Needs review.</strong> An earlier decision, or a change to this pack's options, now rules out the option chosen here. Pick another option, or revisit the earlier decision.
         </div>
       )}
 
@@ -351,6 +351,7 @@ export function TopicPage({ tid }: { tid: string }) {
               <span className="switch-ui" aria-hidden="true" />
               <span>
                 <strong>{m.label}</strong>
+                {m.recommended && <span className="badge badge-rec">Recommended</span>}
                 <span className="muted block" id={`mod-${m.id}-h`}>
                   {m.hint}
                 </span>
@@ -372,13 +373,15 @@ export function TopicPage({ tid }: { tid: string }) {
             {rec?.status === 'decided' ? 'Confirmed' : 'Confirm'}
           </button>
         )}
-        <button type="button" className="btn" disabled={locked} aria-pressed={rec?.status === 'parked'} onClick={() => patch({ status: 'parked' })}>
+        <button type="button" className="btn" disabled={locked} onClick={() => patch({ status: 'parked' })}>
           Park for a later phase
         </button>
-        <button type="button" className="btn" disabled={locked} aria-pressed={rec?.status === 'open'} onClick={() => patch({ status: 'open', chosen: [] })}>
+        <button type="button" className="btn" disabled={locked} onClick={() => patch({ status: 'open', chosen: [] })}>
           Leave open
         </button>
       </div>
+
+      {canvasSlot}
 
       <nav className="pager" aria-label="Topic navigation">
         {prev ? (

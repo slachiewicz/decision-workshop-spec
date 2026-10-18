@@ -6,7 +6,7 @@ _Pack release 2026.10.18 · prepared with Example facilitator_
 
 ## Executive summary
 
-37 of 39 topics were decided, 1 left open and 1 parked. The platform uses Bronze, Silver, Gold, isolated by Catalog per domain and environment, with Dev, test and prod. 2 options rely on features in preview or gated access: Audit-ready, Chargeback from system.billing.usage.
+37 of 39 topics were decided, 1 left open and 1 parked. The platform uses Bronze, Silver, Gold, isolated by Catalog per domain and environment across Dev, test and prod. Storage: Managed tables; transformation: Lakeflow pipelines; BI query mode: Unity Catalog metric views and Power BI Import from a SQL warehouse. 3 options rely on features in preview or gated access: Audit-ready (the audit log system table is in Public Preview), Data quality monitoring, Chargeback from system.billing.usage (serverless usage policies are in Public Preview).
 
 ## Open items
 
@@ -22,11 +22,11 @@ Waiting for the data office to name domain owners.
 
 **Decision:** Bronze, Silver, Gold
 
-- Landing volume: Off
+- Landing volume: On
 
 **Context:** Bronze, Silver and Gold were chosen. Bronze keeps each source in its raw state, so later layers can be rebuilt from it. Silver holds validated, cleaned and enriched tables, so data-quality rules live in one place. Gold holds the modelled, aggregated views that dashboards, ML and applications read. Each layer is a schema in Unity Catalog, as in the Databricks medallion guidance.
 
-No landing volume was added. Every source connects directly and loads into Bronze tables. A volume can be added later, without changing Bronze, if file-based sources appear.
+A landing volume was added ahead of Bronze. File-based sources land in a Unity Catalog volume, governed like tables, and are loaded into Bronze tables from there. Sources that connect directly still load straight into Bronze.
 
 **Alternatives considered:** Raw and Serving; Bronze, Silver, Gold, Mart
 
@@ -34,11 +34,11 @@ No landing volume was added. Every source connects directly and loads into Bronz
 
 **Decision:** Catalog per domain and environment
 
-- Workspace-catalog binding: Off
+- Workspace-catalog binding: On
 
 **Context:** A catalog per domain and environment was chosen, with one schema per layer (for example prod_sales.silver). Databricks treats the catalog as the primary unit of data isolation, so each domain owns its catalogs, grants access to its own groups and can be charged separately. Layers are schemas inside the catalog, which keeps the number of catalogs manageable.
 
-Catalogs are not bound, so any workspace attached to the metastore can reach them and Unity Catalog grants are the only control. Binding can be added later for production catalogs.
+Catalogs are bound to specific workspaces. A workspace that is not bound cannot reach the catalog even if a user holds a grant, so production data stays out of dev and test workspaces.
 
 **Alternatives considered:** Catalog per environment; Catalog per layer and environment
 
@@ -46,17 +46,19 @@ Catalogs are not bound, so any workspace attached to the metastore can reach the
 
 **Decision:** Central backbone and domain catalogs
 
+- Platform owner: Data platform team
+
 **Context:** A central backbone with domain catalogs was chosen. The platform team owns ingestion, conformed layers and shared standards, and each domain owns its catalogs, grants and pipelines within one metastore. Governance stays in one place without making the platform team a bottleneck for domain work.
 
 **Alternatives considered:** Fully centralised; Federated domains with sharing
 
 ### Ingestion
 
-**Decision:** Lakeflow Connect managed connectors
+**Decision:** Lakeflow Connect managed connectors; Auto Loader
 
-**Context:** Lakeflow Connect managed connectors were chosen for the sources they support. They take over authentication, incremental reads and schema changes, and write to streaming tables governed by Unity Catalog. Connectors in preview are listed with their release state.
+**Context:** Lakeflow Connect managed connectors were chosen for the sources they support. They take over authentication, incremental reads and schema changes, and write to streaming tables governed by Unity Catalog. Each connector's release state is shown on its docs page. Auto Loader was chosen for file-based sources. New files in cloud storage or a Unity Catalog volume are loaded incrementally into Bronze tables, using a Lakeflow pipeline so that schema and checkpoint locations are managed.
 
-**Alternatives considered:** Auto Loader; Lakehouse Federation; Inbound shares (OpenSharing); Custom notebooks and jobs; Structured Streaming and message buses; Partner ETL tools
+**Alternatives considered:** Lakehouse Federation; Inbound shares (OpenSharing); Custom notebooks and jobs; Structured Streaming and message buses; Partner ETL tools
 
 ### Storage engine
 
@@ -97,7 +99,7 @@ Catalogs are not bound, so any workspace attached to the metastore can reach the
 
 **Decision:** Serverless jobs; Serverless SQL warehouses; Serverless notebooks
 
-- Default SQL warehouse size: 2X-Small
+- Default SQL warehouse size: Medium
 
 **Context:** Serverless compute was chosen for jobs, SQL warehouses and notebooks. Databricks manages scaling, runtime upgrades and optimisation, and no cluster creation permission is needed. Classic compute is limited to workloads that serverless does not support, and is governed by compute policies.
 
@@ -105,11 +107,11 @@ Catalogs are not bound, so any workspace attached to the metastore can reach the
 
 ### User entitlements
 
-**Decision:** Workspace access (builders)
+**Decision:** Workspace access (builders); Databricks SQL access (analysts); Consumer access (dashboard and Genie users)
 
-**Context:** Workspace access was assigned to data engineers and scientists. It is granted through an account-level group, and viewers do not receive it.
+**Context:** Workspace access was assigned to data engineers and scientists. It is granted through an account-level group, and viewers do not receive it. Databricks SQL access was assigned to analysts. They write queries and dashboards on SQL warehouses and do not get notebook or job access. Consumer access was assigned to business users who view dashboards and ask Genie questions. They cannot create or edit assets, and rate limits and budgets are set before usage grows.
 
-**Alternatives considered:** Databricks SQL access (analysts); Consumer access (dashboard and Genie users); Dashboard sharing to account users
+**Alternatives considered:** Dashboard sharing to account users
 
 ### Environments
 
@@ -143,23 +145,25 @@ Catalogs are not bound, so any workspace attached to the metastore can reach the
 
 **Alternatives considered:** DIY active-passive
 
-**Not available (ruled out by earlier decisions):** Managed disaster recovery — Cross-region recovery needs a second region, so choose more than one region in the region decision.; Active-active — Cross-region recovery needs a second region, so choose more than one region in the region decision.
+**Not available (ruled out by earlier decisions):**
+- Managed disaster recovery — Cross-region recovery needs a second region, so choose more than one region in the region decision.
+- Active-active — Cross-region recovery needs a second region, so choose more than one region in the region decision.
 
 ### Network and private connectivity
 
-**Decision:** Public endpoints with access controls
+**Decision:** Front-end and back-end Private Link
 
-**Context:** Public endpoints with access controls were chosen. Access to the workspace and account console is limited by context-based ingress rules, with IP access lists where they are still in use. Private connectivity is not required by current policy.
+**Context:** Front-end and back-end Private Link were chosen. User traffic and classic compute traffic use private endpoints, workspaces sit in a customer-managed network, and private DNS is operated by the network team.
 
-**Alternatives considered:** Front-end and back-end Private Link; Private Link, VNet injection and serverless NCC
+**Alternatives considered:** Public endpoints with access controls; Private Link, VNet injection and serverless NCC
 
 ### Identity for automation
 
-**Decision:** Service principals with OAuth
+**Decision:** Service principals with OAuth; Workload identity federation
 
-**Context:** Service principals with OAuth machine-to-machine authentication were chosen for automation that cannot use federation. Client secrets are kept in a secret store and rotated on a schedule.
+**Context:** Service principals with OAuth machine-to-machine authentication were chosen for automation that cannot use federation. Client secrets are kept in a secret store and rotated on a schedule. Workload identity federation was chosen for CI/CD. Pipelines authenticate as a Databricks service principal with tokens issued by the CI platform, so no Databricks secret is stored. On Azure, managed identities serve the same purpose for Azure-hosted automation.
 
-**Alternatives considered:** Workload identity federation; User personal access tokens
+**Alternatives considered:** User personal access tokens
 
 ### Account and workspace topology
 
@@ -203,11 +207,11 @@ Catalogs are not bound, so any workspace attached to the metastore can reach the
 
 ### Distribution surfaces
 
-**Decision:** AI/BI dashboards
+**Decision:** ODBC and JDBC drivers
 
-**Context:** Published AI/BI dashboards were chosen as a distribution surface, with scheduled refresh and subscriptions. Dashboards that use shared data permissions are reviewed, because viewers see data under the publisher's credentials.
+**Context:** ODBC and JDBC access to SQL warehouses was chosen for tools that cannot use another surface. Connections use OAuth, and warehouses are sized for the expected tool traffic.
 
-**Alternatives considered:** Genie Agents; Databricks Apps; Lakebase Postgres behind apps; ODBC and JDBC drivers; Embedded dashboards
+**Alternatives considered:** AI/BI dashboards; Genie Agents; Databricks Apps; Lakebase Postgres behind apps; Embedded dashboards
 
 ### Self-service posture
 
@@ -245,21 +249,21 @@ Catalogs are not bound, so any workspace attached to the metastore can reach the
 
 **Decision:** Account-level groups synced from the identity provider
 
-- Service principals for jobs: Off
+- Service principals for jobs: On
 
 **Context:** Access is granted to account-level groups that are synced from the identity provider. Membership changes in the identity provider flow to Databricks, so joiners, movers and leavers are handled once. Direct grants to individual users are avoided.
 
-Jobs run under the identity of their owner. Access for a job is therefore tied to a person, and a job must be reassigned when its owner leaves.
+Production jobs and pipelines run as service principals, not as the people who created them. The jobs keep working when staff change, and their access is granted to the service principal and reviewed like any other principal.
 
 **Alternatives considered:** Grants to individual users
 
 ### Row and column security
 
-**Decision:** None
+**Decision:** Row filters and column masks
 
-**Context:** No row or column security was applied. Access is granted per table, and tables that mix sensitivity levels are split so each table has a single audience.
+**Context:** Unity Catalog row filters and column masks were chosen for tables with restricted rows or values. Table owners attach approved functions, and the functions use account-level group membership.
 
-**Alternatives considered:** Row filters and column masks; ABAC policies on governed tags; Dynamic views
+**Alternatives considered:** None; ABAC policies on governed tags; Dynamic views
 
 ### Personal data handling
 
@@ -273,7 +277,7 @@ Jobs run under the identity of their owner. Access for a job is therefore tied t
 
 **Decision:** Retention windows and archive
 
-- Standard online window: 1 year
+- Standard online window: 3 years
 
 **Context:** Each dataset keeps data online for a defined window. Older data is archived to cheaper storage or deleted according to the dataset's rule. VACUUM and predictive optimization remove unreferenced files so deleted records leave storage, and table history is not used as a long-term backup.
 
@@ -287,15 +291,17 @@ Jobs run under the identity of their owner. Access for a job is therefore tied t
 
 **Alternatives considered:** Minimal; Regulated
 
-**Maturity:** Audit-ready: preview
+**Maturity:** Audit-ready: preview (the audit log system table is in Public Preview)
 
 ### Data quality
 
-**Decision:** Pipeline expectations
+**Decision:** Pipeline expectations; Data quality monitoring
 
-**Context:** Pipeline expectations were chosen for record-level rules. Critical rules fail the update, less critical rules drop or flag records, and rule metrics are reviewed by the table owner.
+**Context:** Pipeline expectations were chosen for record-level rules. Critical rules fail the update, less critical rules drop or flag records, and rule metrics are reviewed by the table owner. Data quality monitoring was chosen. Anomaly detection watches Silver and Gold schemas for stale or incomplete tables, data profiling covers selected key tables, and alerts notify the table owners.
 
-**Alternatives considered:** Data quality monitoring; Third-party testing
+**Alternatives considered:** Third-party testing
+
+**Maturity:** Data quality monitoring: preview
 
 ### Secrets management
 
@@ -321,13 +327,13 @@ Jobs run under the identity of their owner. Access for a job is therefore tied t
 
 **Alternatives considered:** Workspace-level
 
-**Maturity:** Chargeback from system.billing.usage: preview
+**Maturity:** Chargeback from system.billing.usage: preview (serverless usage policies are in Public Preview)
 
 ### Monitoring and alerting
 
 **Decision:** Job alerts, SQL alerts and scheduled review
 
-- Review cadence: Weekly
+- Review cadence: Monthly
 
 **Context:** Job failure notifications and SQL alerts on system tables were chosen, with a scheduled review of runtime, cost and incidents. Notifications go to a team channel through a system destination, and a named owner runs the review.
 
@@ -339,21 +345,21 @@ Jobs run under the identity of their owner. Access for a job is therefore tied t
 
 | Section | Field | Agreed pattern |
 | --- | --- | --- |
-| Catalogs | Catalog pattern | <env>_<domain> (default) |
-| Catalogs | Example | prod_sales (default) |
-| Schemas | Bronze schema | bronze_<source> (default) |
-| Schemas | Silver schema | silver (default) |
-| Schemas | Gold schema | gold (default) |
-| Tables and views | Dimension prefix | dim_ (default) |
-| Tables and views | Fact prefix | fct_ (default) |
-| Tables and views | Metric view prefix | mv_ (default) |
-| Jobs, pipelines and bundles | Job and pipeline pattern | <domain>_<layer>_<purpose>_<env> (default) |
-| Jobs, pipelines and bundles | Bundle name | <domain>-<purpose> (default) |
-| Groups and service principals | Group pattern | <domain>-<role> (default) |
-| Groups and service principals | Service principal pattern | sp-<domain>-<purpose>-<env> (default) |
-| Columns and keys | Column style | snake_case (default) |
-| Columns and keys | Surrogate key | <entity>_key (default) |
-| Columns and keys | Business key | <entity>_id (default) |
+| Catalogs | Catalog pattern | `<env>_<domain>` (default) |
+| Catalogs | Example | `prod_sales` (default) |
+| Schemas | Bronze schema | `bronze_<source>` (default) |
+| Schemas | Silver schema | `silver` (default) |
+| Schemas | Gold schema | `gold` (default) |
+| Tables and views | Dimension prefix | `dim_` (default) |
+| Tables and views | Fact prefix | `fct_` (default) |
+| Tables and views | Metric view prefix | `mv_` (default) |
+| Jobs, pipelines and bundles | Job and pipeline pattern | `<domain>_<layer>_<purpose>_<env>` (default) |
+| Jobs, pipelines and bundles | Bundle name | `<domain>-<purpose>` (default) |
+| Groups and service principals | Group pattern | `<domain>-<role>` (default) |
+| Groups and service principals | Service principal pattern | `sp-<domain>-<purpose>-<env>` (default) |
+| Columns and keys | Column style | `snake_case` (default) |
+| Columns and keys | Surrogate key | `<entity>_key` (default) |
+| Columns and keys | Business key | `<entity>_id` (default) |
 
 **Context:** The naming conventions in this record were confirmed. They apply to every new object. Existing objects are renamed only when they are rebuilt. Names use lowercase letters, digits and underscores, so no object needs quoting in SQL.
 
@@ -371,6 +377,7 @@ Jobs run under the identity of their owner. Access for a job is therefore tied t
 - [Unity Catalog best practices](https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices)
 - [Lakeflow Connect connector concepts](https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/)
 - [Ingest with SQL and Spark APIs](https://docs.databricks.com/aws/en/ingestion/)
+- [What is Auto Loader?](https://docs.databricks.com/aws/en/ingestion/cloud-object-storage/auto-loader/)
 - [Unity Catalog managed tables for Delta Lake and Apache Iceberg](https://docs.databricks.com/aws/en/tables/managed)
 - [Spark Declarative Pipelines on Lakeflow](https://docs.databricks.com/aws/en/ldp/)
 - [Materialized views](https://docs.databricks.com/aws/en/ldp/concepts/materialized-views)
@@ -381,6 +388,7 @@ Jobs run under the identity of their owner. Access for a job is therefore tied t
 - [SQL warehouse types](https://docs.databricks.com/aws/en/compute/sql-warehouse/warehouse-types)
 - [Serverless compute limitations](https://docs.databricks.com/aws/en/compute/serverless/limitations)
 - [Manage entitlements](https://docs.databricks.com/aws/en/security/auth/entitlements)
+- [Share a dashboard](https://docs.databricks.com/aws/en/dashboards/share/share)
 - [Declarative Automation Bundles deployment modes](https://docs.databricks.com/aws/en/dev-tools/bundles/deployment-modes)
 - [Workspace-catalog binding](https://docs.databricks.com/aws/en/data-governance/unity-catalog/access-control/workspace-catalog-binding)
 - [Configure Git integration for Git folders](https://docs.databricks.com/aws/en/repos/repos-setup)
@@ -391,19 +399,21 @@ Jobs run under the identity of their owner. Access for a job is therefore tied t
 - [Databricks Terraform provider](https://docs.databricks.com/aws/en/dev-tools/terraform)
 - [Reliability in Azure Databricks](https://learn.microsoft.com/azure/reliability/reliability-databricks)
 - [Disaster recovery](https://docs.databricks.com/aws/en/admin/disaster-recovery)
-- [Manage IP access lists](https://docs.databricks.com/aws/en/security/network/front-end/ip-access-list)
-- [Networking](https://docs.databricks.com/aws/en/security/network/)
+- [Private Link concepts](https://learn.microsoft.com/azure/databricks/security/network/concepts/privatelink-concepts)
+- [Configure classic private connectivity to Databricks](https://docs.databricks.com/aws/en/security/network/classic/privatelink)
 - [Authorize access to Databricks resources](https://docs.databricks.com/aws/en/dev-tools/auth/)
 - [Service principals](https://docs.databricks.com/aws/en/admin/users-groups/service-principals)
 - [Service principals on Azure Databricks](https://learn.microsoft.com/azure/databricks/admin/users-groups/service-principals)
+- [Authenticate access to Databricks using OAuth token federation](https://docs.databricks.com/aws/en/dev-tools/auth/oauth-federation)
+- [Use Azure managed identities with Azure Databricks](https://learn.microsoft.com/azure/databricks/dev-tools/auth/azure-mi-auth)
 - [Lakeflow Jobs](https://docs.databricks.com/aws/en/jobs/)
 - [What is Delta Lake in Databricks?](https://docs.databricks.com/aws/en/delta/)
 - [Unity Catalog metric views](https://docs.databricks.com/aws/en/uc-semantics/metric-views)
 - [Connect Power BI Desktop to Azure Databricks](https://learn.microsoft.com/azure/databricks/partners/bi/power-bi/desktop)
 - [Connect Tableau to Databricks](https://docs.databricks.com/aws/en/partners/bi/tableau)
 - [Semantic model modes in the Power BI service](https://learn.microsoft.com/power-bi/connect-data/service-dataset-modes-understand)
-- [Share a dashboard](https://docs.databricks.com/aws/en/dashboards/share/share)
-- [Manage scheduled dashboard updates and subscriptions](https://docs.databricks.com/aws/en/dashboards/share/schedule-subscribe)
+- [Databricks ODBC and JDBC drivers](https://docs.databricks.com/aws/en/integrations/jdbc-odbc-bi)
+- [Connect to Azure Databricks from Microsoft Excel](https://learn.microsoft.com/azure/databricks/integrations/excel/)
 - [Create and manage a Genie Agent](https://docs.databricks.com/aws/en/genie-agents/set-up)
 - [What is OpenSharing?](https://docs.databricks.com/aws/en/opensharing)
 - [Databricks-to-Databricks sharing protocol](https://docs.databricks.com/aws/en/opensharing/share-data-databricks)
@@ -415,8 +425,9 @@ Jobs run under the identity of their owner. Access for a job is therefore tied t
 - [Deploy models using Model Serving](https://docs.databricks.com/aws/en/machine-learning/model-serving/)
 - [Sync users and groups from your identity provider using SCIM](https://docs.databricks.com/aws/en/admin/users-groups/scim/)
 - [Groups](https://docs.databricks.com/aws/en/admin/users-groups/groups)
-- [Prepare your data for GDPR compliance](https://docs.databricks.com/aws/en/ldp/gdpr)
 - [Row filters and column masks](https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/)
+- [Manually apply row filters and column masks](https://docs.databricks.com/aws/en/data-governance/unity-catalog/filters-and-masks/manually-apply)
+- [Prepare your data for GDPR compliance](https://docs.databricks.com/aws/en/ldp/gdpr)
 - [Data Classification](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-classification)
 - [Work with table history](https://docs.databricks.com/aws/en/tables/history)
 - [Remove unused data files with vacuum](https://docs.databricks.com/aws/en/tables/operations/vacuum)
@@ -424,6 +435,9 @@ Jobs run under the identity of their owner. Access for a job is therefore tied t
 - [Audit log system table reference](https://docs.databricks.com/aws/en/admin/system-tables/audit-logs)
 - [Lineage system tables reference](https://docs.databricks.com/aws/en/admin/system-tables/lineage)
 - [Manage data quality with pipeline expectations](https://docs.databricks.com/aws/en/ldp/expectations)
+- [Data quality monitoring](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-quality-monitoring)
+- [Anomaly detection](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-quality-monitoring/anomaly-detection)
+- [Data profiling](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-quality-monitoring/data-profiling)
 - [Secret management on Azure Databricks](https://learn.microsoft.com/azure/databricks/security/secrets/)
 - [Secret management](https://docs.databricks.com/aws/en/security/secrets/)
 - [Lineage in Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/data-lineage)

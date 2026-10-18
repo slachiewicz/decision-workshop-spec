@@ -16,8 +16,10 @@ export function Landing({ storage }: { storage: StorageAdapter }) {
   const [showProposed, setShowProposed] = useState(false);
   const [saved, setSaved] = useState<SessionSummary[]>([]);
   const [error, setError] = useState('');
+  const [importError, setImportError] = useState('');
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState('');
+  const [notice, setNotice] = useState<{ text: string; href: string } | null>(null);
 
   const refresh = useCallback(() => {
     storage.list().then(setSaved, () => setSaved([]));
@@ -51,16 +53,30 @@ export function Landing({ storage }: { storage: StorageAdapter }) {
     }
   }
 
-  async function onImport(file: File | undefined) {
+  async function onImport(input: HTMLInputElement) {
+    const file = input.files?.[0];
     if (!file) return;
-    setError('');
+    setImportError('');
+    setNotice(null);
     try {
       const session = importSession(await file.text());
       if (!PACKS.some((p) => p.id === session.pack)) throw new Error(`This file uses an unknown pack "${session.pack}".`);
+      const current = (await loadPackById(session.pack)).manifest.release;
       await storage.save(session);
-      window.location.hash = hrefs.part(session.session_id, 1).slice(1);
+      refresh();
+      if (session.pack_release !== current) {
+        setNotice({
+          text: `This session was saved with pack release ${session.pack_release}; topics with changed options are marked Needs review.`,
+          href: hrefs.part(session.session_id, 1),
+        });
+      } else {
+        window.location.hash = hrefs.part(session.session_id, 1).slice(1);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setImportError(err instanceof Error ? err.message : String(err));
+    } finally {
+      // Let the same file be picked again.
+      input.value = '';
     }
   }
 
@@ -160,8 +176,14 @@ export function Landing({ storage }: { storage: StorageAdapter }) {
         <h2 id="imp-h">Import a session</h2>
         <div className="field">
           <label htmlFor="import">Session file (JSON)</label>
-          <input id="import" type="file" accept=".json,application/json" onChange={(e) => void onImport(e.target.files?.[0])} />
+          <input id="import" type="file" accept=".json,application/json" onChange={(e) => void onImport(e.currentTarget)} />
         </div>
+        {importError && <p className="error" role="alert">{importError}</p>}
+        {notice && (
+          <p className="hint" role="status">
+            {notice.text} <a href={notice.href}>Open the session</a>
+          </p>
+        )}
       </section>
     </div>
   );

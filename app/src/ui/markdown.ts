@@ -56,6 +56,10 @@ export function markdownToHtml(md: string): string {
       out.push(`<h${n}>${inline(h[2]!)}</h${n}>`);
     } else if (lines.every((l) => /^[-*]\s+/.test(l))) {
       out.push(`<ul>${lines.map((l) => `<li>${inline(l.replace(/^[-*]\s+/, ''))}</li>`).join('')}</ul>`);
+    } else if (lines.length > 1 && !/^[-*]\s+/.test(first) && lines.slice(1).every((l) => /^[-*]\s+/.test(l))) {
+      // A label line directly followed by a bullet list, as in "**Warnings:**" plus items.
+      out.push(`<p>${inline(first)}</p>`);
+      out.push(`<ul>${lines.slice(1).map((l) => `<li>${inline(l.replace(/^[-*]\s+/, ''))}</li>`).join('')}</ul>`);
     } else if (first.startsWith('|') && lines.length >= 2) {
       out.push(table(lines));
     } else {

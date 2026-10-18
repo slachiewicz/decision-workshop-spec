@@ -9,12 +9,11 @@ intake:
   - How costly is a bad change to production data or reports, and how often do you release?
   - Do you need a production-like test stage with realistic data volumes and capacity?
   - Who will keep dev and test data current, and how much of it may leave production?
-recommendation_note: ''
+recommendation_note: Dev, Test and Prod give you a place to test with production-like data before a release reaches users.
 adr_context: >-
-  The number of environments was chosen against Microsoft's deployment patterns, which show
-  that without separate workspaces there is no pre-production separation and no deployment
-  pipelines. The selected stages set how changes are built, validated and promoted before
-  they reach users.
+  Development, test and production environments were chosen. Changes are built in development
+  and validated in a test stage with production-like data before they are promoted, which
+  follows Microsoft's deployment patterns. The cost is a third set of workspaces to run.
 options:
   - value: single_env
     label: Production only

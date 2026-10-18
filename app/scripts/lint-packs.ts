@@ -146,7 +146,7 @@ function checkKeys(pack: string, L: Loaded) {
     }
 
     for (const o of t.options) {
-      for (const r of o.requires ?? []) checkRequirement(`${w}.${o.value}`, r, byKey, modKeys);
+      for (const r of o.requires ?? []) checkRequirement(`${w}.${o.value}`, r, byKey, modKeys, choices);
       const ce = o.canvas_effect;
       if (ce?.type === 'footer_badge' && !manifest.canvas.badge_labels[ce.label_id]) {
         err(`${w}.${o.value}`, `footer_badge label_id "${ce.label_id}" not in pack.yaml badge_labels`);
@@ -163,7 +163,8 @@ function checkKeys(pack: string, L: Loaded) {
   }
 }
 
-function checkRequirement(w: string, r: Requirement, byKey: Map<string, TopicKey>, modKeys: Set<string>) {
+function checkRequirement(w: string, r: Requirement, byKey: Map<string, TopicKey>, modKeys: Set<string>, choices: Loaded['choices']) {
+  const choicesOf = (ref: string) => choices[ref]?.map((c) => c.value);
   const target = byKey.get(r.decision_key);
   if (!target) {
     if (!modKeys.has(r.decision_key)) err(w, `requires unknown decision_key ${r.decision_key}`);
@@ -172,8 +173,17 @@ function checkRequirement(w: string, r: Requirement, byKey: Map<string, TopicKey
   const ops = (['in', 'not_in', 'any_of', 'none_of'] as const).filter((k) => r[k]);
   const op = ops[0]!;
   const multi = target.decision_type === 'multi';
-  if (multi !== (op === 'any_of' || op === 'none_of')) {
+  if (!r.field && multi !== (op === 'any_of' || op === 'none_of')) {
     err(w, `operator "${op}" does not fit ${target.decision_type}-select ${r.decision_key} (in/not_in for single, any_of/none_of for multi)`);
+  }
+  if (r.field) {
+    const fields = [...(target.value_fields ?? []), ...target.options.flatMap((o) => o.value_fields ?? [])];
+    const f = fields.find((x) => x.id === r.field);
+    if (!f) return err(w, `requires field "${r.field}", which is not a value field of ${r.decision_key}`);
+    if (op !== 'in' && op !== 'not_in') err(w, `field rules take in/not_in, not ${op}`);
+    const list = f.choices_ref ? choicesOf(f.choices_ref) : undefined;
+    for (const v of r[op] ?? []) if (list && !list.includes(v)) err(w, `requires ${r.field} "${v}", which is not in choices ${f.choices_ref}`);
+    return;
   }
   for (const v of r[op] ?? []) {
     if (!target.options.some((o) => o.value === v)) err(w, `requires ${r.decision_key} value "${v}", which is not an option there`);

@@ -122,7 +122,42 @@ describe('evaluate: severity and precedence', () => {
   });
 });
 
+describe('evaluate: field requirement', () => {
+  const sized = topic('sized', [opt('s')], { title: 'Sized' });
+  const fieldReq = (op: { in?: string[]; not_in?: string[] }) => {
+    const g = topic('g', [opt('g', { requires: [{ decision_key: 'k.sized', field: 'sku', severity: 'block', reason_id: 'why', ...op }] })], {
+      rule_reasons: { why: 'sku problem' },
+    });
+    return { g, pack: packOf([sized, g]) };
+  };
+  const run = (op: { in?: string[]; not_in?: string[] }, values?: Record<string, string>, status: 'decided' | 'open' = 'decided') => {
+    const { g, pack } = fieldReq(op);
+    return evaluate(pack, g, g.options[0]!, sessionOf([rec(sized, ['s'], { values: values ?? {}, status })]));
+  };
+  it('in: tests the value field, not the chosen option', () => {
+    expect(run({ in: ['F64'] }, { sku: 'F64' }).state).toBe('ok');
+    expect(run({ in: ['F64'] }, { sku: 'F2' }).state).toBe('blocked');
+  });
+  it('not_in: tests the value field', () => {
+    expect(run({ not_in: ['F2'] }, { sku: 'F64' }).state).toBe('ok');
+    expect(run({ not_in: ['F2'] }, { sku: 'F2' }).state).toBe('blocked');
+  });
+  it('is pending while the field is unset or blank, or the decision is not decided', () => {
+    expect(run({ in: ['F64'] }, {}).state).toBe('pending');
+    expect(run({ in: ['F64'] }, { sku: '  ' }).state).toBe('pending');
+    expect(run({ in: ['F64'] }, { sku: 'F64' }, 'open').state).toBe('pending');
+  });
+});
+
 describe('needsReview', () => {
+  it('flags a decided topic whose chosen value is no longer an option (stale import)', () => {
+    const t = topic('stale', [opt('a'), opt('b')]);
+    const p = packOf([t]);
+    expect(needsReview(p, t, sessionOf([rec(t, ['old'])]))).toBe(true);
+    expect(needsReview(p, t, sessionOf([rec(t, ['a', 'old'])]))).toBe(true);
+    expect(needsReview(p, t, sessionOf([rec(t, ['a'])]))).toBe(false);
+    expect(needsReview(p, t, sessionOf([rec(t, ['old'], { status: 'open' })]))).toBe(false);
+  });
   const dep = topic('dep', [opt('r', { requires: [{ decision_key: 'k.src', in: ['a'], severity: 'block', reason_id: 'why' }] }), opt('s')], {
     rule_reasons: { why: 'needs a' },
   });

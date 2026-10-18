@@ -32,7 +32,7 @@ topics:
     renderer: cards
     decision_type: single
     required: true
-    recommendation: []
+    recommendation: [per_layer_per_env]
     canvas_element: containers
     options:
       - { value: per_layer_per_env, canvas_effect: { type: container_grouping, pattern: per_layer } }
@@ -186,6 +186,7 @@ topics:
       - value: free_viewers_f64
         requires:
           - { decision_key: cap.strategy, not_in: [split_back_front], severity: warn, reason_id: front_end_sku }
+          - { decision_key: cap.strategy, field: starting_sku, in: [F64, F128, F256, F512, F1024, F2048], severity: warn, reason_id: needs_f64 }
       - { value: pro_per_user }
       - { value: ppu }
 
@@ -199,7 +200,7 @@ topics:
     renderer: cards
     decision_type: single
     required: true
-    recommendation: []
+    recommendation: [dev_test_prod]
     canvas_element: environments
     options:
       - { value: single_env, canvas_effect: { type: env_multiplier, envs: [prod] } }
@@ -238,6 +239,7 @@ topics:
       - value: git_fabric_cicd
         requires:
           - { decision_key: ops.git_platform, in: [ado, github], severity: block, reason_id: needs_git }
+          - { decision_key: ops.environments, not_in: [single_env], severity: warn, reason_id: cicd_single_env }
       - value: deployment_pipelines
         requires:
           - { decision_key: ops.environments, in: [dev_prod, dev_test_prod], severity: block, reason_id: needs_two_stages }
@@ -414,7 +416,9 @@ topics:
     recommendation: []
     canvas_element: governance
     options:
-      - { value: none }
+      - value: none
+        requires:
+          - { decision_key: sec.personal_data, not_in: [isolated_minimised], severity: warn, reason_id: pii_without_rules }
       - value: onelake_security
         canvas_effect: { type: lock, scope: storage }
         requires:

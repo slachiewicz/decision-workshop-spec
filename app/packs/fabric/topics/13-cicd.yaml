@@ -92,3 +92,4 @@ options:
 rule_reasons:
   needs_git: Git with fabric-cicd publishes from a repository. Choose Azure DevOps or GitHub in the source control decision.
   needs_two_stages: Deployment pipelines move items between stage workspaces. Choose Dev and Prod, or Dev, Test and Prod, in the environments decision.
+  cicd_single_env: Git with fabric-cicd promotes between environments; with production only, it deploys straight to production with no test stage.

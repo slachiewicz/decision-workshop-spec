@@ -40,7 +40,7 @@ topics:
       - { value: catalog_per_env, canvas_effect: { type: container_grouping, pattern: single } }
       - { value: catalog_per_layer_env, canvas_effect: { type: container_grouping, pattern: per_layer } }
     modifiers:
-      - { id: workspace_binding, decision_key: platform.workspace_binding, on_value: bound, off_value: open }
+      - { id: workspace_binding, decision_key: platform.workspace_binding, on_value: bound, off_value: open, recommended: true }
 
   - number: 3
     id: platform_centralization
@@ -237,7 +237,10 @@ topics:
       - value: bundles_ci
         requires:
           - { decision_key: ops.git_platform, not_in: [none], severity: block, reason_id: ci_needs_git }
-      - { value: terraform_infra }
+          - { decision_key: sec.job_identity, in: [service_principals], severity: warn, reason_id: deploy_identity }
+      - value: terraform_infra
+        requires:
+          - { decision_key: sec.job_identity, in: [service_principals], severity: warn, reason_id: deploy_identity }
       - { value: bundles_manual }
       - { value: manual }
 
@@ -410,7 +413,7 @@ topics:
       - { value: account_groups }
       - { value: individual_grants }
     modifiers:
-      - { id: service_principals_for_jobs, decision_key: sec.job_identity, on_value: service_principals, off_value: owner_identity }
+      - { id: service_principals_for_jobs, decision_key: sec.job_identity, on_value: service_principals, off_value: owner_identity, recommended: true }
 
   - number: 23
     id: row_column_security
@@ -425,7 +428,9 @@ topics:
     recommendation: []
     canvas_element: governance
     options:
-      - { value: none }
+      - value: none
+        requires:
+          - { decision_key: sec.personal_data, not_in: [isolated_minimised], severity: warn, reason_id: pii_without_rules }
       - { value: row_filters_masks, canvas_effect: { type: lock, scope: all } }
       - value: abac
         canvas_effect: { type: lock, scope: all }
@@ -575,8 +580,13 @@ topics:
     required: false
     recommendation: []
     options:
-      - { value: workspace_per_env }
-      - { value: workspace_per_domain_env }
+      - value: workspace_per_env
+        requires:
+          - { decision_key: platform.workspace_binding, in: [bound], severity: warn, reason_id: topology_binding }
+          - { decision_key: platform.transform_location, not_in: [separate_engineering], severity: warn, reason_id: topology_transform }
+      - value: workspace_per_domain_env
+        requires:
+          - { decision_key: platform.workspace_binding, in: [bound], severity: warn, reason_id: topology_binding }
       - { value: single_workspace }
 
   - number: 33

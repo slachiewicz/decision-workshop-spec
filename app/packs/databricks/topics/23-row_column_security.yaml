@@ -100,4 +100,5 @@ options:
       - url: https://docs.databricks.com/aws/en/views/dynamic
         title: Create a dynamic view
 rule_reasons:
+  pii_without_rules: The personal-data decision isolates personal data, but with no row or column rules that isolation rests on workspace or catalog access alone.
   abac_account_principals: Unity Catalog grants and policies accept account-level groups only; workspace-local groups can't be used.

@@ -37,7 +37,7 @@ describe('renderAdr structure', () => {
     const pack = packOf([layers, iso, env]);
     const md = renderAdr(pack, sessionOf([rec(layers, ['three']), rec(iso, ['a']), rec(env, ['dp'])], { facilitator: 'Sam' }), TODAY);
     expect(md).toContain('# Architecture Decision Record\n\n## Acme · Test Platform · 2026-10-18\n\n_Pack release 1.0.0 · prepared with Sam_');
-    expect(md).toContain('3 of 3 topics were decided, 0 left open and 0 parked. The platform uses Three, isolated by Per layer, with Dev and prod.');
+    expect(md).toContain('3 of 3 topics were decided, 0 left open and 0 parked. The platform uses Three, isolated by Per layer across Dev and prod.');
     expect(md).not.toContain('## Open items');
     expect(md).not.toContain('## Parked');
     expect(md).not.toContain('depart');
@@ -45,13 +45,14 @@ describe('renderAdr structure', () => {
     expect(md.endsWith('\n')).toBe(true);
   });
 
-  it('says "not yet decided" and lists unvisited, open and parked topics', () => {
+  it('leaves undecided parts out of the summary and lists unvisited, open and parked topics', () => {
     const extra = topic('extra', [opt('a')], { title: 'Extra' });
     const park = topic('park', [opt('a')], { title: 'Park me' });
     const pack = packOf([layers, iso, env, extra, park]);
     const md = renderAdr(pack, sessionOf([rec(layers, ['three']), rec(extra, [], { status: 'open', notes: 'ask the CIO' }), rec(park, [], { status: 'parked', notes: 'phase 2' })]), TODAY);
     expect(md).toContain('1 of 5 topics were decided, 3 left open and 1 parked.');
-    expect(md).toContain('isolated by not yet decided, with not yet decided.');
+    expect(md).not.toContain('isolated by');
+    expect(md).not.toContain('not yet decided across');
     expect(md).toContain('## Open items\n\n### Isolation\n\n**Status:** Open, no decision recorded.');
     expect(md).toContain('### Extra\n\n**Status:** Open, no decision recorded.\n\nask the CIO');
     expect(md).toContain('## Parked for a later phase\n\n### Park me\n\n**Status:** Parked for a later phase.\n\n**Reason:** phase 2');
@@ -104,13 +105,43 @@ describe('renderAdr structure', () => {
       { decision_type: 'multi', title: 'Rules', rule_reasons: { needs_x: 'Base must be X', prefer_x: 'X is preferred' } },
     );
     const md = renderAdr(packOf([base, t]), sessionOf([rec(base, ['y']), rec(t, ['okay', 'soft', 'gone'])]), TODAY);
-    expect(md).toContain('**Not available (ruled out by earlier decisions):** HARD — Base must be X');
-    expect(md).toContain('**Warnings:** SOFT — X is preferred');
+    expect(md).toContain('**Not available (ruled out by earlier decisions):**\n- HARD — Base must be X');
+    expect(md).toContain('**Warnings:**\n- SOFT — X is preferred');
     expect(md).toContain('**Needs review (now ruled out by an earlier decision):** GONE — Base must be X');
     expect(md).toContain('**Maturity:** SOFT: preview; GONE: gated');
     expect(md).toContain('2 options rely on features in preview or gated access: SOFT, GONE.');
     expect(md).toContain('1 choice carries a warning: Rules.');
     expect(md.split('### Rules')[1]).not.toContain('**Alternatives considered:**');
+  });
+
+  it('adds storage, transformation and query labels to summary sentence 2 when decided', () => {
+    const st = topic('storage_engine', [opt('lh', { label: 'Lakehouse' })], { title: 'Storage' });
+    const tr = topic('transform_tool', [opt('dbt', { label: 'dbt' })], { title: 'Transform' });
+    const qm = topic('query_mode', [opt('dq', { label: 'DirectQuery' })], { title: 'Query' });
+    const pack = packOf([layers, iso, env, st, tr, qm]);
+    const all = [rec(layers, ['three']), rec(iso, ['a']), rec(env, ['dp']), rec(st, ['lh']), rec(tr, ['dbt']), rec(qm, ['dq'])];
+    expect(renderAdr(pack, sessionOf(all), TODAY)).toContain(
+      'across Dev and prod. Storage: Lakehouse; transformation: dbt; BI query mode: DirectQuery.',
+    );
+    const some = renderAdr(pack, sessionOf(all.filter((r) => r.topic_id !== 'transform_tool' && r.topic_id !== 'storage_engine')), TODAY);
+    expect(some).toContain('across Dev and prod. BI query mode: DirectQuery.');
+  });
+
+  it('renders "Off (suggested: On)" for a recommended modifier left off', () => {
+    const mod = (id: string, recommended?: boolean) => ({
+      id, decision_key: `k.${id}`, on_value: 'on', off_value: 'off', title: id, label: '', hint: '',
+      on_adr_context: '', off_adr_context: '', ...(recommended ? { recommended } : {}),
+    });
+    const t = topic('mods', [opt('a')], { title: 'Mods', modifiers: [mod('binding', true), mod('plain'), mod('lit', true)] });
+    const md = renderAdr(packOf([t]), sessionOf([rec(t, ['a'], { modifiers: { lit: true } })]), TODAY);
+    expect(md).toContain('- binding: Off (suggested: On)\n- plain: Off\n- lit: On');
+  });
+
+  it('renders maturity_note in the Maturity line and in summary sentence 5', () => {
+    const t = topic('audit', [opt('ready', { label: 'Audit-ready', maturity: 'preview', maturity_note: 'The audit log system table is in Public Preview' })], { title: 'Audit' });
+    const md = renderAdr(packOf([t]), sessionOf([rec(t, ['ready'])]), TODAY);
+    expect(md).toContain('**Maturity:** Audit-ready: preview (the audit log system table is in Public Preview)');
+    expect(md).toContain('1 option relies on features in preview or gated access: Audit-ready (the audit log system table is in Public Preview).');
   });
 
   it('renders value fields and modifiers, and cites sources once', () => {
@@ -162,7 +193,7 @@ describe('renderAdr structure', () => {
     });
     const md = renderAdr(packOf([n]), sessionOf([rec(n, [], { naming: { prod: 'acme-prod' } })]), TODAY);
     expect(md).toContain('**Decision:** Confirmed');
-    expect(md).toContain('| Section | Field | Agreed pattern |\n| --- | --- | --- |\n| Workspaces | Prod | acme-prod |\n| Workspaces | Dev\\|Test | dev-{x} (default) |');
+    expect(md).toContain('| Section | Field | Agreed pattern |\n| --- | --- | --- |\n| Workspaces | Prod | `acme-prod` |\n| Workspaces | Dev\\|Test | `dev-{x}` (default) |');
   });
 
   it('is deterministic', () => {

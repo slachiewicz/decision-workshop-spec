@@ -6,7 +6,7 @@ _Pack release 2026.10.18 · prepared with Example facilitator_
 
 ## Executive summary
 
-37 of 39 topics were decided, 1 left open and 1 parked. The platform uses Bronze, Silver, Gold, isolated by Workspace per layer and environment, with Production only. 1 option relies on features in preview or gated access: Alerts and scheduled review.
+37 of 39 topics were decided, 1 left open and 1 parked. The platform uses Bronze, Silver, Gold, isolated by Workspace per layer and environment across Development, test and production. Storage: Lakehouse only; transformation: Spark notebooks; BI query mode: Direct Lake on OneLake. 1 option relies on features in preview or gated access: Alerts and scheduled review (job alerts built on Activator are in preview; failure e-mails are not).
 
 ## Open items
 
@@ -34,25 +34,27 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 **Decision:** Workspace per layer and environment
 
-**Context:** One workspace per layer and environment was chosen. Raw, cleaned and curated data have different owners and different access rules, and the team accepts the extra workspaces and cross-workspace shortcuts in exchange for strict separation of duties.
+**Context:** Separate workspaces per layer and environment were chosen, following Microsoft's guidance that each medallion layer sits in its own lakehouse and that a workspace per layer gives the most control. Access, capacity and deployment can then differ for each layer, at the cost of more workspaces to administer.
 
 **Alternatives considered:** Bronze and Silver shared, Gold separate; One workspace per environment
 
 ### Platform centralisation
 
-**Decision:** Central backbone with domain marts
+**Decision:** Central backbone with domain Gold workspaces
 
-**Context:** A central backbone with domain marts was chosen. A central team owns ingestion and the shared conformed layers, and each business domain builds and owns its own marts on top. Identity, security and lineage stay central, which follows the domain-oriented data mesh pattern that Microsoft describes for OneLake.
+- Platform owner: Data platform team
+
+**Context:** A central backbone with domain Gold workspaces was chosen. A central team owns ingestion and the shared Bronze and Silver layers, and each business domain builds and owns its own Gold workspace on top. Identity, security and lineage stay central, which follows the domain-oriented data mesh pattern that Microsoft describes for OneLake.
 
 **Alternatives considered:** Fully centralised
 
 ### Ingestion mechanisms
 
-**Decision:** Copy job
+**Decision:** Copy job; Mirroring; OneLake shortcuts
 
-**Context:** Copy job was chosen for raw ingestion into Bronze. It handles bulk, incremental and CDC loads for the supported connectors without a hand-built pipeline, and transformation is left to later layers.
+**Context:** Copy job was chosen for raw ingestion into Bronze. It handles bulk, incremental and CDC loads for the supported connectors without a hand-built pipeline, and transformation is left to later layers. Mirroring was chosen for supported operational databases. It replicates changes into OneLake without a pipeline, and the mirrored database serves as the Bronze copy for those sources. OneLake shortcuts were chosen for data that already sits in storage the team owns. The data is referenced rather than copied, which avoids a second copy and the load job that would maintain it.
 
-**Alternatives considered:** Data Factory pipelines; Mirroring; OneLake shortcuts; Notebooks; Dataflow Gen2; Eventstream; Fabric Link (Dataverse); Azure Synapse Link (Dataverse)
+**Alternatives considered:** Data Factory pipelines; Notebooks; Dataflow Gen2; Eventstream; Fabric Link (Dataverse); Azure Synapse Link (Dataverse)
 
 ### Storage engine
 
@@ -70,7 +72,8 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 **Alternatives considered:** Dataflow Gen2; dbt
 
-**Not available (ruled out by earlier decisions):** T-SQL in a warehouse — T-SQL transformations run in a Fabric warehouse. Choose Warehouse only, or Lakehouse plus Warehouse, in the storage engine decision.
+**Not available (ruled out by earlier decisions):**
+- T-SQL in a warehouse — T-SQL transformations run in a Fabric warehouse. Choose Warehouse only, or Lakehouse plus Warehouse, in the storage engine decision.
 
 ### Transformation location
 
@@ -84,7 +87,7 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 **Decision:** Single primary region
 
-- Azure region: Brazil South
+- Azure region: West Europe
 
 **Context:** A single primary region was chosen. Capacities and their OneLake data sit in one Azure region that satisfies the residency requirements. Further regions are added through Multi-Geo only when a specific legal or latency reason is stated, because each added region brings its own capacities, disaster recovery plan and cost.
 
@@ -94,14 +97,12 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 **Decision:** Single capacity with surge protection
 
-- Starting SKU: F2
+- Starting SKU: F64
 - Surge protection level: Capacity level
 
 **Context:** A single shared capacity with surge protection was chosen. All workloads draw on one pool, which uses capacity efficiently, and surge protection rejects background work before the capacity reaches deep throttling. The capacity is monitored with the Fabric Capacity Metrics app, and it is split only if measured contention or chargeback needs justify a second one.
 
-**Alternatives considered:** Capacity per business unit; Back-end and front-end capacities
-
-**Not available (ruled out by earlier decisions):** Separate capacities for development and production — Separate development and production capacities only make sense with at least two environments. Choose Dev and Prod, or Dev, Test and Prod, in the environments decision.
+**Alternatives considered:** Separate capacities for development and production; Capacity per business unit; Back-end and front-end capacities
 
 ### Who gets access to what, and what it costs
 
@@ -113,11 +114,11 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 ### Environments
 
-**Decision:** Production only
+**Decision:** Development, test and production
 
-**Context:** A production-only setup was chosen. The platform is small or at pilot stage, and the team accepts that development and testing happen in the production workspaces and that deployment pipelines aren't available. Environments are added when the platform grows.
+**Context:** Development, test and production environments were chosen. Changes are built in development and validated in a test stage with production-like data before they are promoted, which follows Microsoft's deployment patterns. The cost is a third set of workspaces to run.
 
-**Alternatives considered:** Development and production; Development, test and production
+**Alternatives considered:** Production only; Development and production
 
 ### Source control
 
@@ -133,9 +134,7 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 **Context:** Git with fabric-cicd was chosen as the deployment approach. Item definitions live in the repository, and a pipeline in the Git platform publishes them to each environment's workspace with environment-specific parameters and manual approvals. This is the code-first option that Microsoft's Fabric CI/CD guidance recommends.
 
-**Alternatives considered:** Manual promotion
-
-**Not available (ruled out by earlier decisions):** Deployment pipelines — Deployment pipelines move items between stage workspaces. Choose Dev and Prod, or Dev, Test and Prod, in the environments decision.
+**Alternatives considered:** Deployment pipelines; Manual promotion
 
 ### Disaster recovery
 
@@ -145,7 +144,8 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 **Alternatives considered:** Cross-region replication and Git backup
 
-**Not available (ruled out by earlier decisions):** Active-active across regions — Active-active needs capacities in at least two regions. Choose Multiple regions in the region decision.
+**Not available (ruled out by earlier decisions):**
+- Active-active across regions — Active-active needs capacities in at least two regions. Choose Multiple regions in the region decision.
 
 ### Network and private connectivity
 
@@ -157,11 +157,11 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 ### Identity for automation
 
-**Decision:** Workspace identity
+**Decision:** Workspace identity; Service principals
 
-**Context:** Workspace identities were chosen for Fabric items that connect to Azure storage and other supported sources. Fabric manages the credentials, and access is granted to the identity on the target resource.
+**Context:** Workspace identities were chosen for Fabric items that connect to Azure storage and other supported sources. Fabric manages the credentials, and access is granted to the identity on the target resource. Service principals were chosen for deployment pipelines and API automation. The tenant setting is limited to a dedicated security group, each principal holds the lowest workspace role that works, and secrets are stored in a managed vault and rotated.
 
-**Alternatives considered:** Service principals; User identity
+**Alternatives considered:** User identity
 
 ### Tenant and domain topology
 
@@ -213,19 +213,19 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 ### Self-service posture
 
-**Decision:** Consumers only
+**Decision:** Governed self-service
 
-**Context:** Consumers-only was chosen. The BI team builds all semantic models and reports, and business users read through apps or workspace access. Build permission is not offered, which keeps the number of models small at the cost of a single delivery queue.
+**Context:** Governed self-service was chosen. A central team maintains and certifies shared semantic models, and business users build reports on them with Read and Build permission in their own workspaces. Row-level security stays in force for those creators.
 
-**Alternatives considered:** Governed self-service; Creator programme
+**Alternatives considered:** Consumers only; Creator programme
 
 ### Data sharing surfaces
 
-**Decision:** OneLake shortcuts
+**Decision:** OneLake shortcuts; SQL analytics endpoint
 
-**Context:** OneLake shortcuts were chosen for sharing inside the tenant. Consumers read Gold tables in place, with no second copy, and access is the intersection of rights on the shortcut path and the target. Data residency is therefore unchanged by sharing.
+**Context:** OneLake shortcuts were chosen for sharing inside the tenant. Consumers read Gold tables in place, with no second copy, and access is the intersection of rights on the shortcut path and the target. Data residency is therefore unchanged by sharing. The SQL analytics endpoint was opened for consumers who work in T-SQL. It gives read-only access to Delta tables, and security is set with SQL permissions on views and tables. Teams that need writes use Spark or a warehouse instead.
 
-**Alternatives considered:** SQL analytics endpoint; OneLake storage APIs; API for GraphQL; External data sharing
+**Alternatives considered:** OneLake storage APIs; API for GraphQL; External data sharing
 
 ### AI readiness
 
@@ -253,11 +253,11 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 ### Row and column security
 
-**Decision:** No row or column rules
+**Decision:** OneLake security roles
 
-**Context:** No row or column security was applied. Access is controlled at workspace, item and table level, and every reader of a table sees all of it. The team judged the data suitable for that audience and records the assumption.
+**Context:** OneLake security roles were chosen to enforce table, row and column rules in one place for all Fabric engines. Consumers hold the Viewer role, and row and column rules are combined in one role per user. Editing roles in the workspace are limited to the platform team.
 
-**Alternatives considered:** OneLake security roles; Model RLS by group; Dynamic RLS with a mapping table
+**Alternatives considered:** No row or column rules; Model RLS by group; Dynamic RLS with a mapping table
 
 ### Personal data handling
 
@@ -271,7 +271,7 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 **Decision:** Windows and archive
 
-- Online window: 1 year
+- Online window: 3 years
 
 **Context:** Data stays online for the chosen window and then moves to cooler storage tiers by lifecycle rule. Delta tables are vacuumed on the default seven-day threshold or longer, and the online window is recorded with the decision so audits can check it.
 
@@ -295,11 +295,11 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 ### Secrets and credentials
 
-**Decision:** Stored connections
+**Decision:** Key Vault references
 
-**Context:** Credentials are stored in Fabric connections. Each connection has a restricted list of users, and the owner rotates the secret there. This was chosen because it works for all connectors and avoids a dependency on Key Vault.
+**Context:** Azure Key Vault references were chosen for connections to supported connectors. Secrets stay in the vault and rotate there, and Fabric reads the latest version at connection time. Sources that cannot use references fall back to stored connections.
 
-**Alternatives considered:** Key Vault references
+**Alternatives considered:** Stored connections
 
 ### Discovery and lineage
 
@@ -321,13 +321,13 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 **Decision:** Alerts and scheduled review
 
-- Review cadence: Weekly
+- Review cadence: Monthly
 
 **Context:** Alerts plus a scheduled review were chosen. Job failures and capacity thresholds raise alerts to named recipients, and the owner reviews capacity and job health on a fixed cadence. Full log collection is left for later.
 
 **Alternatives considered:** Reactive; Full observability
 
-**Maturity:** Alerts and scheduled review: preview
+**Maturity:** Alerts and scheduled review: preview (job alerts built on Activator are in preview; failure e-mails are not)
 
 ### Naming conventions
 
@@ -335,23 +335,23 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 
 | Section | Field | Agreed pattern |
 | --- | --- | --- |
-| Workspaces | Data workspace pattern | {domain}-{layer}-{env} (default) |
-| Workspaces | Reporting workspace pattern | {domain}-reports-{env} (default) |
-| Workspaces | Environment tokens | dev, test, prod (default) |
-| Items | Lakehouse prefix | lh_ (default) |
-| Items | Warehouse prefix | wh_ (default) |
-| Items | Pipeline prefix | pl_ (default) |
-| Items | Notebook prefix | nb_ (default) |
-| Items | Semantic model prefix | sm_ (default) |
-| Schemas and tables | Bronze schema | {source_system} (default) |
-| Schemas and tables | Silver schema | {domain} (default) |
-| Schemas and tables | Gold schema | {domain} (default) |
-| Schemas and tables | Dimension table prefix | dim_ (default) |
-| Schemas and tables | Fact table prefix | fact_ (default) |
-| Columns and keys | Column name style | snake_case (default) |
-| Columns and keys | Surrogate key suffix | _key (default) |
-| Columns and keys | Business key suffix | _id (default) |
-| Columns and keys | Audit columns | _ingested_at, _source_system (default) |
+| Workspaces | Data workspace pattern | `{domain}-{layer}-{env}` (default) |
+| Workspaces | Reporting workspace pattern | `{domain}-reports-{env}` (default) |
+| Workspaces | Environment tokens | `dev, test, prod` (default) |
+| Items | Lakehouse prefix | `lh_` (default) |
+| Items | Warehouse prefix | `wh_` (default) |
+| Items | Pipeline prefix | `pl_` (default) |
+| Items | Notebook prefix | `nb_` (default) |
+| Items | Semantic model prefix | `sm_` (default) |
+| Schemas and tables | Bronze schema | `{source_system}` (default) |
+| Schemas and tables | Silver schema | `{domain}` (default) |
+| Schemas and tables | Gold schema | `{domain}` (default) |
+| Schemas and tables | Dimension table prefix | `dim_` (default) |
+| Schemas and tables | Fact table prefix | `fact_` (default) |
+| Columns and keys | Column name style | `snake_case` (default) |
+| Columns and keys | Surrogate key suffix | `_key` (default) |
+| Columns and keys | Business key suffix | `_id` (default) |
+| Columns and keys | Audit columns | `_ingested_at, _source_system` (default) |
 
 **Context:** Naming conventions were confirmed for workspaces, items, schemas, tables, columns and keys. The patterns apply to all new objects, and existing objects are renamed only when they are next changed. The chosen patterns are listed with the decision.
 
@@ -371,6 +371,9 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 - [Fabric domains](https://learn.microsoft.com/fabric/governance/domains)
 - [Microsoft Fabric decision guide - Choose a data movement strategy](https://learn.microsoft.com/fabric/data-factory/decision-guide-data-movement)
 - [Microsoft Fabric decision guide - Choose a data integration strategy](https://learn.microsoft.com/fabric/data-factory/decision-guide-data-integration)
+- [What is Mirroring in Fabric?](https://learn.microsoft.com/fabric/mirroring/overview)
+- [Get data into Microsoft Fabric](https://learn.microsoft.com/fabric/fundamentals/get-data)
+- [Unify data with OneLake shortcuts and mirroring](https://learn.microsoft.com/fabric/onelake/unify-data)
 - [Microsoft Fabric decision guide - Choose a data store](https://learn.microsoft.com/fabric/fundamentals/decision-guide-data-store)
 - [Prepare and transform data in Microsoft Fabric](https://learn.microsoft.com/fabric/fundamentals/prepare-transform-data)
 - [Choose a Microsoft Fabric deployment pattern](https://learn.microsoft.com/azure/architecture/data-guide/technology-choices/fabric-deployment-patterns)
@@ -380,7 +383,7 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 - [Microsoft Fabric capacity planning guide - Scale for decentralized analytics](https://learn.microsoft.com/fabric/enterprise/capacity-planning-scale-self-service-analytics)
 - [Understand Microsoft Fabric licenses and capacity](https://learn.microsoft.com/fabric/enterprise/licenses)
 - [Power BI implementation planning - Subscriptions, licenses, and trials](https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-subscriptions-licenses-trials)
-- [Cost considerations for Microsoft Fabric workloads](https://learn.microsoft.com/azure/well-architected/microsoft-fabric/cost-optimization)
+- [Introduction to deployment pipelines](https://learn.microsoft.com/fabric/cicd/deployment-pipelines/intro-to-deployment-pipelines)
 - [What is Microsoft Fabric Git integration?](https://learn.microsoft.com/fabric/cicd/git-integration/intro-to-git-integration)
 - [Automate git integration with a service principal in Azure DevOps](https://learn.microsoft.com/fabric/cicd/git-integration/automate-git-integration-with-service-principal)
 - [Fabric CI/CD concepts and best practices](https://learn.microsoft.com/fabric/fundamentals/understand-best-practices-fabric-cicd)
@@ -391,6 +394,9 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 - [Trusted workspace access](https://learn.microsoft.com/fabric/security/security-trusted-workspace-access)
 - [Workspace identity](https://learn.microsoft.com/fabric/security/workspace-identity)
 - [Authenticate with workspace identity](https://learn.microsoft.com/fabric/security/workspace-identity-authenticate)
+- [Developer tenant settings](https://learn.microsoft.com/fabric/admin/service-admin-portal-developer)
+- [Service principals in Fabric Data Warehouse](https://learn.microsoft.com/fabric/data-warehouse/service-principals)
+- [Tutorial - End-to-end automation in Fabric](https://learn.microsoft.com/fabric/cicd/tutorial-end-to-end-automation)
 - [Best practices for planning and creating domains in Microsoft Fabric](https://learn.microsoft.com/fabric/governance/domains-best-practices)
 - [What is Data Factory in Microsoft Fabric?](https://learn.microsoft.com/fabric/data-factory/data-factory-overview)
 - [CI/CD for pipelines in Data Factory in Microsoft Fabric](https://learn.microsoft.com/fabric/data-factory/cicd-pipelines)
@@ -402,26 +408,29 @@ No separate landing zone was added. Every source is copied into Bronze, which al
 - [Integrate Direct Lake security](https://learn.microsoft.com/fabric/fundamentals/direct-lake-security-integration)
 - [Get started with org apps](https://learn.microsoft.com/power-bi/explore-reports/org-app-items)
 - [Publish a workspace app in Power BI](https://learn.microsoft.com/power-bi/collaborate-share/service-create-distribute-apps)
+- [Power BI usage scenarios: Managed self-service BI](https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-usage-scenario-managed-self-service-bi)
+- [Promote and certify Power BI content with endorsement](https://learn.microsoft.com/power-bi/collaborate-share/service-endorsement-overview)
 - [Power BI implementation planning: Content distribution and sharing](https://learn.microsoft.com/power-bi/guidance/powerbi-implementation-planning-content-distribution-sharing)
-- [Microsoft Fabric adoption roadmap: Content ownership and management](https://learn.microsoft.com/power-bi/guidance/fabric-adoption-roadmap-content-ownership-and-management)
 - [Shortcuts in a lakehouse](https://learn.microsoft.com/fabric/data-engineering/lakehouse-shortcuts)
 - [OneLake shortcut security](https://learn.microsoft.com/fabric/onelake/onelake-shortcut-security)
+- [What is the SQL analytics endpoint for a lakehouse?](https://learn.microsoft.com/fabric/data-engineering/lakehouse-sql-analytics-endpoint)
+- [What is a lakehouse in Microsoft Fabric?](https://learn.microsoft.com/fabric/data-engineering/lakehouse-overview)
 - [Enable and configure Copilot in Microsoft Fabric](https://learn.microsoft.com/fabric/fundamentals/copilot-enable-fabric)
 - [Add a Fabric data agent as a tool in Microsoft Copilot Studio](https://learn.microsoft.com/fabric/data-science/data-agent-microsoft-copilot-studio-tool)
 - [Analyze and train data in Microsoft Fabric](https://learn.microsoft.com/fabric/fundamentals/analyze-train-data)
 - [Roles in workspaces in Microsoft Fabric](https://learn.microsoft.com/fabric/fundamentals/roles-workspaces)
 - [Give users access to workspaces](https://learn.microsoft.com/fabric/fundamentals/give-access-workspaces)
-- [Data security in OneLake](https://learn.microsoft.com/fabric/onelake/security/get-started-security)
-- [Data Subject Requests and the GDPR and CCPA](https://learn.microsoft.com/compliance/regulatory/gdpr-data-subject-requests)
 - [Table, column, and row-level security in OneLake](https://learn.microsoft.com/fabric/onelake/security/table-column-row-security)
+- [Create and manage OneLake security roles](https://learn.microsoft.com/fabric/onelake/security/create-manage-roles)
+- [Data Subject Requests and the GDPR and CCPA](https://learn.microsoft.com/compliance/regulatory/gdpr-data-subject-requests)
 - [Dynamic data masking in Fabric Data Warehouse](https://learn.microsoft.com/fabric/data-warehouse/dynamic-data-masking)
 - [OneLake storage tiers](https://learn.microsoft.com/fabric/onelake/onelake-storage-tiers)
 - [OneLake lifecycle management](https://learn.microsoft.com/fabric/onelake/onelake-lifecycle-management)
 - [Learn about auditing solutions in Microsoft Purview](https://learn.microsoft.com/purview/audit-solutions-overview)
 - [Track user activities in Microsoft Fabric](https://learn.microsoft.com/fabric/admin/track-user-activities)
 - [Track user activities in Power BI](https://learn.microsoft.com/fabric/enterprise/powerbi/service-admin-auditing)
+- [Data security in OneLake](https://learn.microsoft.com/fabric/onelake/security/get-started-security)
 - [Data quality in materialized lake views](https://learn.microsoft.com/fabric/data-engineering/materialized-lake-views/data-quality)
-- [Secure your Data Factory in Microsoft Fabric deployment](https://learn.microsoft.com/fabric/data-factory/secure-data-factory-in-microsoft-fabric)
 - [Configure Azure Key Vault references](https://learn.microsoft.com/fabric/data-factory/azure-key-vault-reference-configure)
 - [OneLake catalog overview](https://learn.microsoft.com/fabric/governance/onelake-catalog-overview)
 - [Get started with Fabric governance](https://learn.microsoft.com/fabric/governance/get-started-with-fabric-governance)

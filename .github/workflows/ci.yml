@@ -25,6 +25,6 @@ jobs:
       - run: npm run typecheck
       - run: npm run check:packs
       - run: npm run check:engine
-      - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - run: npm run sample:adr && git diff --exit-code docs/examples

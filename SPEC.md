@@ -241,6 +241,8 @@ interface Session {
 }
 ```
 
+v1 implements session `schema_version` 1 and defers the release migration table and the .docx export; see [app/docs/CONTRACT.md](app/docs/CONTRACT.md) for what the app does today.
+
 Rejected and ruled-out options are not stored. They are computed when the ADR is rendered,
 so they can't go stale when an earlier answer changes.
 

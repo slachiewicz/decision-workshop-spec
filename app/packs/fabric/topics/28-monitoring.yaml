@@ -55,6 +55,7 @@ options:
       recipients through Activator rules, and the owner reviews consumption in the Capacity Metrics
       app on the agreed cadence. Thresholds are revisited at each review.
     maturity: preview
+    maturity_note: Job alerts built on Activator are in preview; failure e-mails are not
     as_of: '2026-10-18'
     value_field_labels:
       review_cadence:

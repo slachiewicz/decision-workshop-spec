@@ -3,90 +3,297 @@
   "$id": "topic.schema.json",
   "title": "Topic prose (content layer)",
   "type": "object",
-  "required": ["id", "title", "situation", "intake", "recommendation_note", "adr_context", "options"],
+  "required": [
+    "id",
+    "title",
+    "situation",
+    "intake",
+    "recommendation_note",
+    "adr_context",
+    "options"
+  ],
   "additionalProperties": false,
   "properties": {
-    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
-    "title": { "type": "string", "minLength": 3, "maxLength": 60 },
-    "situation": { "type": "string", "minLength": 80, "maxLength": 700 },
-    "intake": { "type": "array", "items": { "type": "string", "minLength": 15, "maxLength": 240 }, "maxItems": 5 },
-    "recommendation_note": { "type": "string", "maxLength": 200 },
-    "adr_context": { "type": "string", "minLength": 60, "maxLength": 900 },
-    "options": { "type": "array", "items": { "$ref": "#/$defs/option" } },
-    "modifiers": { "type": "array", "items": { "$ref": "#/$defs/modifier" } },
-    "value_field_labels": { "$ref": "#/$defs/fieldLabels" },
-    "rule_reasons": { "type": "object", "additionalProperties": { "type": "string", "minLength": 20, "maxLength": 240 } },
-    "naming_sections": { "type": "array", "items": { "$ref": "#/$defs/namingSection" }, "minItems": 1 }
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 60
+    },
+    "situation": {
+      "type": "string",
+      "minLength": 80,
+      "maxLength": 700
+    },
+    "intake": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 15,
+        "maxLength": 240
+      },
+      "maxItems": 5
+    },
+    "recommendation_note": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "adr_context": {
+      "type": "string",
+      "minLength": 60,
+      "maxLength": 900
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/option"
+      }
+    },
+    "modifiers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/modifier"
+      }
+    },
+    "value_field_labels": {
+      "$ref": "#/$defs/fieldLabels"
+    },
+    "rule_reasons": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 20,
+        "maxLength": 240
+      }
+    },
+    "naming_sections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/namingSection"
+      },
+      "minItems": 1
+    }
   },
   "$defs": {
     "fieldLabels": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["label"],
+        "required": [
+          "label"
+        ],
         "additionalProperties": false,
-        "properties": { "label": { "type": "string", "maxLength": 60 }, "hint": { "type": "string", "maxLength": 160 } }
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "hint": {
+            "type": "string",
+            "maxLength": 160
+          }
+        }
       }
     },
     "source": {
       "type": "object",
-      "required": ["url", "title"],
+      "required": [
+        "url",
+        "title"
+      ],
       "additionalProperties": false,
       "properties": {
-        "url": { "type": "string", "pattern": "^https://" },
-        "title": { "type": "string", "minLength": 3, "maxLength": 140 }
+        "url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 140
+        }
       }
     },
     "option": {
       "type": "object",
-      "required": ["value", "label", "description", "tradeoff", "pros", "cons", "adr_context", "maturity", "as_of", "sources"],
+      "required": [
+        "value",
+        "label",
+        "description",
+        "tradeoff",
+        "pros",
+        "cons",
+        "adr_context",
+        "maturity",
+        "as_of",
+        "sources"
+      ],
       "additionalProperties": false,
       "properties": {
-        "value": { "type": "string" },
-        "label": { "type": "string", "minLength": 2, "maxLength": 60 },
-        "description": { "type": "string", "minLength": 20, "maxLength": 180 },
-        "tradeoff": { "type": "string", "minLength": 20, "maxLength": 160 },
-        "pros": { "type": "array", "items": { "type": "string", "minLength": 10, "maxLength": 140 }, "minItems": 1, "maxItems": 5 },
-        "cons": { "type": "array", "items": { "type": "string", "minLength": 10, "maxLength": 140 }, "minItems": 1, "maxItems": 5 },
-        "adr_context": { "type": "string", "minLength": 40, "maxLength": 700 },
-        "maturity": { "enum": ["ga", "preview", "beta", "gated", "deprecated"] },
-        "as_of": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-        "sources": { "type": "array", "items": { "$ref": "#/$defs/source" }, "minItems": 1 },
-        "value_field_labels": { "$ref": "#/$defs/fieldLabels" }
+        "value": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "description": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 180
+        },
+        "tradeoff": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 160
+        },
+        "pros": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 140
+          },
+          "minItems": 1,
+          "maxItems": 5
+        },
+        "cons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 140
+          },
+          "minItems": 1,
+          "maxItems": 5
+        },
+        "adr_context": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 700
+        },
+        "maturity": {
+          "enum": [
+            "ga",
+            "preview",
+            "beta",
+            "gated",
+            "deprecated"
+          ]
+        },
+        "as_of": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          },
+          "minItems": 1
+        },
+        "value_field_labels": {
+          "$ref": "#/$defs/fieldLabels"
+        },
+        "maturity_note": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 120
+        }
       }
     },
     "modifier": {
       "type": "object",
-      "required": ["id", "title", "label", "hint", "on_adr_context", "off_adr_context"],
+      "required": [
+        "id",
+        "title",
+        "label",
+        "hint",
+        "on_adr_context",
+        "off_adr_context"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string", "maxLength": 60 },
-        "label": { "type": "string", "maxLength": 80 },
-        "hint": { "type": "string", "maxLength": 300 },
-        "on_adr_context": { "type": "string", "minLength": 40, "maxLength": 600 },
-        "off_adr_context": { "type": "string", "minLength": 40, "maxLength": 600 }
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "hint": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "on_adr_context": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 600
+        },
+        "off_adr_context": {
+          "type": "string",
+          "minLength": 40,
+          "maxLength": 600
+        }
       }
     },
     "namingSection": {
       "type": "object",
-      "required": ["id", "title", "blurb", "fields"],
+      "required": [
+        "id",
+        "title",
+        "blurb",
+        "fields"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string", "maxLength": 60 },
-        "blurb": { "type": "string", "maxLength": 200 },
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "blurb": {
+          "type": "string",
+          "maxLength": 200
+        },
         "fields": {
-          "type": "array", "minItems": 1,
+          "type": "array",
+          "minItems": 1,
           "items": {
             "type": "object",
-            "required": ["id", "label", "hint", "default"],
+            "required": [
+              "id",
+              "label",
+              "hint",
+              "default"
+            ],
             "additionalProperties": false,
             "properties": {
-              "id": { "type": "string" },
-              "label": { "type": "string", "maxLength": 60 },
-              "hint": { "type": "string", "maxLength": 160 },
-              "default": { "type": "string", "maxLength": 120 }
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 60
+              },
+              "hint": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "default": {
+                "type": "string",
+                "maxLength": 120
+              }
             }
           }
         }

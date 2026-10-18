@@ -9,12 +9,12 @@ intake:
   - Must the people who load raw data be kept apart from the people who read Gold, by policy or by regulation?
   - Do you need separate workspaces per environment so deployment pipelines or Git branches can work?
   - How many teams will own items, and can they cope with a handful of workspaces each?
-recommendation_note: ''
+recommendation_note: Microsoft recommends each medallion lakehouse in its own workspace, which gives control at layer level.
 adr_context: >-
-  The workspace layout was decided against Microsoft's guidance that each medallion layer sits
-  in its own lakehouse or warehouse, and that a separate workspace per layer gives the most
-  control. The chosen split balances that isolation against the number of workspaces the team
-  can administer.
+  Separate workspaces per layer and environment were chosen, following Microsoft's guidance
+  that each medallion layer sits in its own lakehouse and that a workspace per layer gives the
+  most control. Access, capacity and deployment can then differ for each layer, at the cost of
+  more workspaces to administer.
 options:
   - value: per_layer_per_env
     label: Workspace per layer and environment

@@ -29,6 +29,10 @@ export class IndexedDbStorage implements StorageAdapter {
       open.onerror = () => reject(open.error ?? new Error('IndexedDB open failed'));
       open.onblocked = () => reject(new Error('IndexedDB blocked'));
     });
+    // A one-time failure must not stick: let the next call try to open again.
+    this.dbPromise.catch(() => {
+      this.dbPromise = undefined;
+    });
     return this.dbPromise;
   }
 
@@ -85,20 +89,24 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 }
 
-/** Tries each adapter in order; the first one that works answers. */
+/**
+ * Saves to the first adapter that works. Reads look across all of them, so a session saved to
+ * localStorage after a transient IndexedDB error is still found, newest copy winning.
+ */
 export class ChainStorage implements StorageAdapter {
   constructor(private readonly adapters: StorageAdapter[]) {}
 
   async load(id: string): Promise<Session | undefined> {
+    let best: Session | undefined;
     for (const a of this.adapters) {
       try {
         const s = await a.load(id);
-        if (s) return s;
+        if (s && (!best || s.updated_at > best.updated_at)) best = s;
       } catch {
         /* try the next adapter */
       }
     }
-    return undefined;
+    return best;
   }
 
   async save(session: Session): Promise<void> {
@@ -113,14 +121,18 @@ export class ChainStorage implements StorageAdapter {
   }
 
   async list(): Promise<SessionSummary[]> {
+    const byId = new Map<string, SessionSummary>();
     for (const a of this.adapters) {
       try {
-        return await a.list();
+        for (const item of await a.list()) {
+          const seen = byId.get(item.session_id);
+          if (!seen || item.updated_at > seen.updated_at) byId.set(item.session_id, item);
+        }
       } catch {
         /* try the next adapter */
       }
     }
-    return [];
+    return [...byId.values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   }
 
   async remove(id: string): Promise<void> {

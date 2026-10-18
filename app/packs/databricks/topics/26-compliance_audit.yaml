@@ -51,6 +51,7 @@ options:
       cover the evidence period. A named owner reviews them on a schedule, and alerts flag
       unusual access.
     maturity: preview
+    maturity_note: The audit log system table is in Public Preview
     as_of: '2026-10-18'
     sources:
       - url: https://docs.databricks.com/aws/en/admin/system-tables/audit-logs

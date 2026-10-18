@@ -15,6 +15,7 @@ adr_context: >-
   Rules defined in OneLake apply to every Fabric engine for the Viewer role, and rules defined in a
   semantic model apply only to that model. The team recorded which tables each rule protects.
 rule_reasons:
+  pii_without_rules: The personal-data decision isolates personal data, but with no row or column rules that isolation rests on workspace or item access alone.
   dl_sql_ignores_onelake: >-
     Direct Lake on SQL endpoint resolves access through the SQL analytics endpoint. In its default
     owner-identity mode OneLake roles aren't applied per user; in user-identity mode they are, but

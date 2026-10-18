@@ -113,9 +113,18 @@ function Shell({ route }: { route: Exclude<Route, { name: 'home' }> }) {
     <Canvas model={model} caption={`${pack.manifest.platform_label} canvas`} />
   );
 
+  // On narrow screens the canvas sits above the previous/next pager of a topic page.
+  const narrowCanvas = (
+    <details className="collapsible no-print">
+      <summary>Canvas</summary>
+      {canvas}
+    </details>
+  );
+  const canvasInPage = !wide && showSide && route.name === 'topic';
+
   let page;
   if (route.name === 'part') page = <PartIntro n={route.n} />;
-  else if (route.name === 'topic') page = <TopicPage tid={route.tid} />;
+  else if (route.name === 'topic') page = <TopicPage tid={route.tid} canvasSlot={canvasInPage ? narrowCanvas : undefined} />;
   else page = <SignOff />;
 
   return (
@@ -145,11 +154,8 @@ function Shell({ route }: { route: Exclude<Route, { name: 'home' }> }) {
             <h2 className="side-title">Canvas</h2>
             {canvas}
           </aside>
-        ) : (
-          <details className="collapsible no-print">
-            <summary>Canvas</summary>
-            {canvas}
-          </details>
+        ) : canvasInPage ? null : (
+          narrowCanvas
         ))}
     </div>
   );

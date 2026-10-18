@@ -78,3 +78,6 @@ options:
     sources:
       - url: https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices
         title: Unity Catalog best practices
+rule_reasons:
+  topology_binding: Separate workspaces per environment only isolate data when catalogs are bound to their workspace; catalog binding is off.
+  topology_transform: "A separate engineering workspace writes to production catalogs, which conflicts with binding each production catalog to its own production workspace."

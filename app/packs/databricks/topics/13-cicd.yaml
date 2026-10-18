@@ -97,3 +97,4 @@ options:
         title: CI/CD on Databricks
 rule_reasons:
   ci_needs_git: CI deployments of bundles run from a repository, so choose a Git provider in the source control decision first.
+  deploy_identity: Deployments and production jobs should run as service principals; the access decision leaves jobs running as their owners.

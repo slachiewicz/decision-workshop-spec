@@ -55,6 +55,7 @@ options:
       tags, serverless workloads with serverless usage policies, and budgets provide alerts.
       Untagged usage is reported to the platform team each month.
     maturity: preview
+    maturity_note: Serverless usage policies are in Public Preview
     as_of: '2026-10-18'
     sources:
       - url: https://docs.databricks.com/aws/en/admin/usage/system-tables

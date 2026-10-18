@@ -6,7 +6,7 @@ _Pack release 2026.10.18 · prepared with Sylwester Lachiewicz_
 
 ## Executive summary
 
-2 of 2 topics were decided, 0 left open and 0 parked. The platform uses Bronze, Silver, Gold, isolated by not yet decided, with not yet decided. 1 decision departs from the suggested default: Semantic model storage mode.
+2 of 2 topics were decided, 0 left open and 0 parked. The platform uses Bronze, Silver, Gold. BI query mode: Direct Lake on SQL endpoint. 1 decision departs from the suggested default: Semantic model storage mode.
 
 ## Decisions
 

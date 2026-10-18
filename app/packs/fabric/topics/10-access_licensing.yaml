@@ -87,3 +87,4 @@ options:
         title: Power BI service features by license type
 rule_reasons:
   front_end_sku: With a back-end and front-end split, every capacity hosting a report or its semantic model must be F64 or larger for free viewers to read it.
+  needs_f64: Free viewers need the report and its semantic model on an F64 or larger capacity; the starting SKU chosen is smaller.

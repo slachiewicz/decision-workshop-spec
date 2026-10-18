@@ -15,6 +15,14 @@ packs/
     topics/NN-<topic_id>.yaml   prose for one topic
 ```
 
+Fields worth knowing beyond the types:
+
+- `Requirement.field` tests a value field of the referenced decision (§3).
+- `ModifierKey.recommended: true` marks a modifier whose suggested setting is on. The ADR
+  notes when it is left off (§4).
+- `OptionProse.maturity_note` names the part that isn't GA when the option is a posture
+  rather than one feature (§4).
+
 Ownership:
 
 - **`keys.yaml`** belongs to the driver. Content writers never edit it.
@@ -57,6 +65,10 @@ interface Session {
 }
 ```
 
+`schema_version` 1 is the only version v1 reads and writes. A session saved with another
+`pack_release` still opens; the Landing page tells the user, and the stale-value rule in §3
+marks affected topics as needing review.
+
 Derived values are computed and never stored:
 
 - `recommendation_followed`
@@ -82,6 +94,9 @@ For each `requires` entry on the option:
 1. If the referenced decision is `decided`, its current value is `chosen[0]` for a
    single-select topic or `chosen` for a multi-select topic. If the key is a modifier key,
    the value is that modifier's `on_value` or `off_value`.
+   With `field` set, the value is that value field of the decision (`values[field]`) instead
+   of its chosen options. A field that is unset or blank counts as not decided, so the result
+   is `pending`.
 2. The operator decides whether the requirement is met:
    - `in`: the value is in the list
    - `not_in`: the value isn't in the list
@@ -101,7 +116,9 @@ For each `requires` entry on the option:
 Precedence: `blocked`, then `warn`, then `pending`, then `ok`. All reasons are shown.
 
 - **Needs review:** a decided topic that has a chosen option now evaluating to `blocked`
-  is flagged *needs review*. It is never cleared silently.
+  is flagged *needs review*. It is never cleared silently. A decided topic whose `chosen`
+  holds a value that isn't an option of the topic (a stale import after a pack release
+  removed or renamed it) is flagged the same way.
 - **Adaptive recommendation:** look up the followed decision's current value in `map`. If
   the result is non-empty, it replaces `recommendation`. If any recommended option is
   `blocked`, show no recommendation for that topic, with the note "The usual default is
@@ -133,11 +150,15 @@ is skipped when its count is 0:
 
 1. "<N> of <M> topics were decided, <O> left open and <P> parked." M counts only the
    visible topics, so proposed topics count only when `show_proposed` is on.
-2. "The platform uses <labels of medallion_layers>, isolated by <isolation_strategy label>,
-   with <environments label>." This uses the chosen labels, or "not yet decided".
+2. "The platform uses <labels of medallion_layers>, isolated by <isolation_strategy label>
+   across <environments label>." This uses the chosen labels, or "not yet decided". A second
+   sentence follows when any of these are decided: "It stores data in <storage_engine label>,
+   transforms with <transform_tool label> and queries through <query_mode label>." Parts that
+   aren't decided are left out, and the sentence is omitted when none is decided.
 3. "<D> decisions depart from the suggested default: <titles>."
 4. "<W> choices carry warnings: <titles>."
-5. "<R> options rely on features in preview or gated access: <labels>."
+5. "<R> options rely on features in preview or gated access: <labels>." An option with a
+   `maturity_note` is written "<label> (<note, first letter lower-cased>)".
 
 **Per decided topic:**
 
@@ -145,13 +166,16 @@ is skipped when its count is 0:
 ### <title>
 **Decision:** <chosen labels, joined with "; ">
 <value fields as "- <label>: <value label or text>">
-<modifiers as "- <modifier title>: On|Off">
+<modifiers as "- <modifier title>: On|Off">   (a modifier with `recommended: true` that is off
+                                              reads "Off (suggested: On)")
 **Context:** <adr_context — see below>
 <modifier on_/off_adr_context for each modifier>
 **Alternatives considered:** <labels of options not chosen and not blocked>
-**Not available (ruled out by earlier decisions):** <label — reason> (only if any)
-**Warnings:** <label — reason> (only if any)
-**Maturity:** <label: preview|gated|beta|deprecated> (only for non-GA chosen options)
+**Not available (ruled out by earlier decisions):** (only if any)
+- <label — reason>
+**Warnings:** (only if any)
+- <label — reason>
+**Maturity:** <label: preview|gated|beta|deprecated (maturity_note)> (only for non-GA chosen options)
 **Notes:** <notes> (only if set)
 ```
 
@@ -205,7 +229,7 @@ Effects and what they do to the model:
 | `layer_boxes { layers }` | Sets `layers`. Default before any decision: bronze, silver, gold, drawn dashed |
 | `landing_zone { on }` (modifier) | Sets `landing`, labelled with `pack.canvas.landing_label` |
 | `container_grouping { pattern }` | `per_layer`: one container per layer. `first_pair_shared`: layers 1 and 2 share one, then one per layer. `single`: one for all layers. `per_domain`: one per domain, drawn as two stacked containers with the label "<container_label> per domain" |
-| `env_multiplier { envs }` | Sets `environments`. The containers repeat per environment, with Gold drawn only in prod when `envs` is a single entry |
+| `env_multiplier { envs }` | Sets `environments`. The containers repeat per environment. |
 | `layer_engines { default, first?, last? }` | Sets `engine` on each layer, using the label from `pack.canvas.layer_engine_labels`. `first` and `last` override the outer layers |
 | `transform_band { on }` | Shows a band labelled "Transformations" across the containers |
 | `serving_lane { pattern }` | Sets `serving.pattern`. The UI draws the lane variant with that name |
