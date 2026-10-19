@@ -182,10 +182,17 @@ export function App() {
       </a>
       <header className="topbar no-print">
         <a className="brand" href={hrefs.home()}>
-          Decision workshop
+          <span className="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 7h14M5 12h9M5 17h5" />
+              <circle cx="18" cy="16" r="3" />
+            </svg>
+          </span>
+          <span className="brand-text">Decision workshop</span>
         </a>
-        <button type="button" className="btn btn-quiet" onClick={cycleTheme} aria-label={`Theme: ${theme}. Change theme`}>
-          Theme: {theme}
+        <button type="button" className="theme-btn" onClick={cycleTheme} aria-label={`Theme: ${theme}. Change theme`}>
+          <span aria-hidden="true">{theme === 'dark' ? '☾' : theme === 'light' ? '☀' : '◐'}</span>
+          {theme === 'auto' ? 'Auto' : theme === 'light' ? 'Light' : 'Dark'}
         </button>
       </header>
       {route.name === 'home' ? (

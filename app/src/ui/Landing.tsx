@@ -81,12 +81,29 @@ export function Landing({ storage }: { storage: StorageAdapter }) {
   }
 
   return (
-    <div className="page narrow">
-      <h1 tabIndex={-1}>Decision workshop</h1>
-      <p className="lead">
-        Walk through the architecture decisions for a data platform, record what was agreed and why,
-        and export a decision record at the end. Everything stays in this browser.
-      </p>
+    <div className="landing">
+      <header className="hero">
+        <span className="hero-pill">Microsoft Fabric and Databricks · 39 decisions</span>
+        <h1 tabIndex={-1}>Decision workshop</h1>
+        <p className="lead">
+          Walk through the architecture decisions for a data platform, record what was agreed and why,
+          and export a decision record at the end. Everything stays in this browser.
+        </p>
+        <ol className="steps">
+          <li>
+            <span className="step-n" aria-hidden="true">1</span>
+            <span><strong>Pick a platform</strong>Fabric or Databricks, with vendor-sourced options.</span>
+          </li>
+          <li>
+            <span className="step-n" aria-hidden="true">2</span>
+            <span><strong>Decide together</strong>Defaults, trade-offs and rules that catch conflicts.</span>
+          </li>
+          <li>
+            <span className="step-n" aria-hidden="true">3</span>
+            <span><strong>Export the record</strong>An ADR in Markdown or PDF, plus a session file.</span>
+          </li>
+        </ol>
+      </header>
 
       <section aria-labelledby="new-h" className="panel">
         <h2 id="new-h">Start a session</h2>
@@ -95,7 +112,7 @@ export function Landing({ storage }: { storage: StorageAdapter }) {
             <legend>Platform</legend>
             <div className="choice-row">
               {PACKS.map((p) => (
-                <label key={p.id} className={`choice${packId === p.id ? ' on' : ''}`}>
+                <label key={p.id} className={`choice${packId === p.id ? ' on' : ''}`} data-pack={p.id}>
                   <input type="radio" name="pack" value={p.id} checked={packId === p.id} onChange={() => setPackId(p.id)} />
                   <span>
                     <strong>{p.label}</strong>
