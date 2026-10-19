@@ -25,6 +25,8 @@ The e2e tests use the installed Google Chrome locally and the bundled Chromium w
 
 ## Deploy
 
+Live: <https://decision-workshop.slachiewicz.workers.dev> (Cloudflare Workers static assets).
+
 The build output is `app/dist/`, served with hash routing, so any static host works.
 
 - Cloudflare: `cd app && npm run build && npx wrangler deploy`
