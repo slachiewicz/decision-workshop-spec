@@ -49,8 +49,28 @@ export function PartIntro({ n }: { n: number }) {
         </a>
       </div>
       <nav className="pager" aria-label="Part navigation">
-        {prev ? <a href={hrefs.part(sid, prev.part)}>Previous part: {prev.title}</a> : <span />}
-        {next ? <a href={hrefs.part(sid, next.part)}>Next part: {next.title}</a> : <a href={hrefs.signoff(sid)}>Sign-off</a>}
+        {prev ? (
+          <a className="btn pager-prev" href={hrefs.part(sid, prev.part)}>
+            <span aria-hidden="true">←</span>
+            <span className="pager-label">
+              Previous part<span className="pager-title">: {prev.title}</span>
+            </span>
+          </a>
+        ) : (
+          <span />
+        )}
+        <a className="btn pager-next" href={next ? hrefs.part(sid, next.part) : hrefs.signoff(sid)}>
+          <span className="pager-label">
+            {next ? (
+              <>
+                Next part<span className="pager-title">: {next.title}</span>
+              </>
+            ) : (
+              'Sign-off'
+            )}
+          </span>
+          <span aria-hidden="true">→</span>
+        </a>
       </nav>
     </div>
   );

@@ -385,24 +385,31 @@ export function TopicPage({ tid, canvasSlot }: { tid: string; canvasSlot?: React
 
       <nav className="pager" aria-label="Topic navigation">
         {prev ? (
-          <a href={hrefs.topic(sid, prev.id)} rel="prev">
-            <span aria-hidden="true">← </span>Previous: {prev.title}
+          <a className="btn pager-prev" href={hrefs.topic(sid, prev.id)} rel="prev">
+            <span aria-hidden="true">←</span>
+            <span className="pager-label">
+              Previous<span className="pager-title">: {prev.title}</span>
+            </span>
           </a>
         ) : group ? (
-          <a href={hrefs.part(sid, group.part)}>
-            <span aria-hidden="true">← </span>Part introduction
+          <a className="btn pager-prev" href={hrefs.part(sid, group.part)}>
+            <span aria-hidden="true">←</span>
+            <span className="pager-label">Part introduction</span>
           </a>
         ) : (
           <span />
         )}
         {next ? (
-          <a href={hrefs.topic(sid, next.id)} rel="next">
-            Next: {next.title}
-            <span aria-hidden="true"> →</span>
+          <a className="btn btn-primary pager-next" href={hrefs.topic(sid, next.id)} rel="next">
+            <span className="pager-label">
+              Next<span className="pager-title">: {next.title}</span>
+            </span>
+            <span aria-hidden="true">→</span>
           </a>
         ) : (
-          <a href={hrefs.signoff(sid)}>
-            Sign-off<span aria-hidden="true"> →</span>
+          <a className="btn btn-primary pager-next" href={hrefs.signoff(sid)}>
+            <span className="pager-label">Sign-off</span>
+            <span aria-hidden="true">→</span>
           </a>
         )}
       </nav>

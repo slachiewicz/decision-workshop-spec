@@ -352,7 +352,8 @@ h1:focus {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
-  padding: clamp(1rem, 2.5vw, 2rem);
+  --page-pad: clamp(1rem, 2.5vw, 2rem);
+  padding: var(--page-pad);
   min-width: 0;
 }
 .main > .page,
@@ -1103,12 +1104,51 @@ fieldset.panel legend {
 }
 .pager {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.5rem 1rem;
+  align-items: center;
+  gap: 0.75rem;
   margin-top: 1.75rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-soft);
+}
+.pager .btn {
+  min-width: 0;
+  max-width: 50%;
+}
+.pager-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pager-next {
+  margin-left: auto;
+}
+/* Narrow screens: keep previous/next on screen while the options scroll. The bar sticks to the
+   bottom of the topic page, so it never covers content outside it. */
+@media (max-width: 899px) {
+  .pager {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin: 1.25rem calc(-1 * var(--page-pad)) calc(-1 * var(--page-pad));
+    padding: 0.65rem var(--page-pad) calc(0.65rem + env(safe-area-inset-bottom));
+    background: var(--surface-glass);
+    backdrop-filter: saturate(160%) blur(12px);
+    -webkit-backdrop-filter: saturate(160%) blur(12px);
+    border-top: 1px solid var(--border-soft);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .pager-prev .pager-title {
+    display: none;
+  }
+  .pager-prev {
+    flex: none;
+  }
+  .pager .pager-next {
+    flex: 1;
+    max-width: none;
+  }
 }
 
 /* Sign-off */
@@ -1221,7 +1261,7 @@ fieldset.panel legend {
     padding-right: 0.5rem;
   }
   .page {
-    padding: 0.9rem;
+    --page-pad: 0.9rem;
   }
   .brand-text {
     font-size: 0.95rem;
